@@ -91,6 +91,23 @@ describe("AuthApi.deleteAccount", () => {
   });
 });
 
+describe("AuthApi.updateProfile", () => {
+  it("以一个 Go 请求同时提交昵称与简介", async () => {
+    const patch = vi.fn().mockResolvedValue({ user: validUser });
+    const api = new AuthApi({ get: vi.fn(), post: vi.fn(), patch } as never);
+
+    await expect(
+      (api as unknown as { updateProfile(displayName: string, bio: string): Promise<unknown> })
+        .updateProfile("新昵称", "新的简介"),
+    ).resolves.toEqual({ user: validUser });
+
+    expect(patch).toHaveBeenCalledWith("/api/auth/me/profile", {
+      displayName: "新昵称",
+      bio: "新的简介",
+    });
+  });
+});
+
 const validUser = {
   id: "user-1",
   displayName: "测试用户",

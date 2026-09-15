@@ -69,7 +69,7 @@ export function AccountPage() {
     sessionRestoreError,
     sessionRestoreState,
     bindGuest,
-    updateDisplayName,
+    updateProfile,
     revokeAllSessions,
     deleteAccount,
     changePassword,
@@ -79,6 +79,7 @@ export function AccountPage() {
   const [binding, setBinding] = useState(false);
   const [bindingError, setBindingError] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState(user?.bio ?? "");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [revokingSessions, setRevokingSessions] = useState(false);
@@ -159,7 +160,7 @@ export function AccountPage() {
           setProfileError(null);
           setProfileSaving(true);
           try {
-            await updateDisplayName(displayName);
+            await updateProfile(displayName, bio);
             setDisplayName("");
           } catch (error) {
             setProfileError(
@@ -174,8 +175,17 @@ export function AccountPage() {
           修改昵称
           <input
             value={displayName}
-            maxLength={64}
+            maxLength={50}
             onChange={(event) => setDisplayName(event.target.value)}
+            disabled={profileSaving}
+          />
+        </label>
+        <label>
+          个人简介
+          <textarea
+            value={bio}
+            maxLength={200}
+            onChange={(event) => setBio(event.target.value)}
             disabled={profileSaving}
           />
         </label>

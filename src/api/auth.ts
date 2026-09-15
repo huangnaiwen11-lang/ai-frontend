@@ -7,6 +7,8 @@ export type ContentAccess = "standard" | "review_restricted";
 export type AuthUser = {
   id: string;
   displayName: string;
+  // 旧版 Go 投影尚未包含该字段时安全降级为空资料，不阻断会话恢复。
+  bio?: string;
   bindingState: "guest" | "bound";
   accountStatus: "normal" | "banned" | "deleted";
   contentAccess: ContentAccess;
@@ -73,6 +75,11 @@ export class AuthApi {
     return this.client.patch("/api/auth/me/profile", { displayName });
   }
 
+  /** 资料页一次性保存昵称与简介；两者均由 Go 服务端再次限长校验。 */
+  public updateProfile(displayName: string, bio: string): Promise<{ user: AuthUser }> {
+    return this.client.patch("/api/auth/me/profile", { displayName, bio });
+  }
+
   /** 撤销用户全部 Go 会话，服务端会立即拒绝其他设备的旧会话。 */
   public revokeAllSessions(): Promise<{ revoked: boolean }> {
     return this.client.delete("/api/auth/me/sessions");
@@ -118,6 +125,7 @@ function isRuntimeAuthUserProjection(value: unknown): value is RuntimeAuthUser {
   return (
     typeof user.id === "string" &&
     typeof user.displayName === "string" &&
+    (user.bio === undefined || typeof user.bio === "string") &&
     typeof user.bindingState === "string" &&
     typeof user.accountStatus === "string" &&
     typeof user.contentAccess === "string" &&
