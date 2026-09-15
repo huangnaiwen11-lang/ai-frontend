@@ -129,7 +129,42 @@ describe('App', () => {
     } })))
     render(<App />)
     expect(await screen.findByRole('button', { name: '提交反馈' })).toBeInTheDocument()
+    expect(screen.getAllByRole('option')).toHaveLength(6)
+    expect(screen.getByRole('option', { name: '表扬与好评' })).toBeInTheDocument()
+    expect(screen.getByLabelText('反馈截图')).toHaveAttribute('type', 'file')
     expect(window.location.pathname).toBe(ROUTES.feedback)
+  })
+
+  it('反馈截图先走 Go 素材接口，提交时只传经服务端验证的素材 ID', async () => {
+    window.history.pushState({}, '', ROUTES.feedback)
+    window.sessionStorage.setItem('ai-frontend-service.go-session-token', 'existing-token')
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith('/api/auth/me')) return jsonResponse({ user: {
+        id: 'user-1', displayName: '本地用户', bindingState: 'bound', accountStatus: 'normal',
+        contentAccess: 'standard', timezone: 'Asia/Shanghai', isGuest: false,
+      } })
+      if (url.endsWith('/api/media/images')) return jsonResponse({
+        id: 'media-1', reference: 'https://uploads.example.test/assets/media-1', contentType: 'image/png', sizeBytes: 3, downloadUrl: '/api/media/images/media-1',
+      })
+      if (url.endsWith('/api/feedback')) {
+        expect(init?.body).toBe(JSON.stringify({
+          type: 'payment', message: '支付成功但钻石没有到账，请帮忙核实。', email: '', attachments: [{ id: 'media-1' }],
+        }))
+        return jsonResponse({ feedbackId: 'feedback-1' })
+      }
+      throw new Error(`unexpected request: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+    await screen.findByRole('button', { name: '提交反馈' })
+    await userEvent.selectOptions(screen.getByLabelText('反馈类型'), 'payment')
+    await userEvent.upload(screen.getByLabelText('反馈截图'), new File(['png'], 'receipt.png', { type: 'image/png' }))
+    await screen.findByText('已上传 1 张反馈截图')
+    await userEvent.type(screen.getByLabelText('反馈内容'), '支付成功但钻石没有到账，请帮忙核实。')
+    await userEvent.click(screen.getByRole('button', { name: '提交反馈' }))
+    expect(await screen.findByText('反馈已提交，感谢你的反馈。')).toBeInTheDocument()
+    expect(fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/api/feedback'))).toHaveLength(1)
   })
 
   it('未登录访问反馈仍跳转到登录且不写入反馈', async () => {

@@ -59,9 +59,14 @@ describe('MediaApi', () => {
   it.each([
     ['empty', file('image/png', 0)],
     ['too large', file('image/png', 10 * 1024 * 1024 + 1)],
-    ['unsupported explicit MIME', file('image/gif', 3)],
+    ['unsupported explicit MIME', file('image/bmp', 3)],
   ])('rejects %s upload with typed GoApiError', async (_label, value) => {
     await expect(new MediaApi(client()).uploadImage(value)).rejects.toSatisfy((error: unknown) => isGoApiError(error) && error.status === 400)
+  })
+
+  it('允许旧反馈合同中的 GIF 图片', async () => {
+    const c = client(); c.postForm.mockResolvedValue({ id: 'i1', reference: 'https://uploads.example.test/assets/i1', contentType: 'image/gif', sizeBytes: 3, downloadUrl: '/api/media/images/i1' })
+    await expect(new MediaApi(c).uploadImage(file('image/gif', 3, 'feedback.gif'))).resolves.toMatchObject({ id: 'i1', contentType: 'image/gif' })
   })
 
   it('允许浏览器 MIME 为空并交给 Go 按字节检查', async () => {

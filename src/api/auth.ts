@@ -78,6 +78,15 @@ export class AuthApi {
     return this.client.delete("/api/auth/me/sessions");
   }
 
+  /**
+   * 注销只依据当前 Go 会话判定目标用户。
+   *
+   * 浏览器不传用户 ID，避免篡改请求后注销其他账号。
+   */
+  public deleteAccount(): Promise<{ deleted: boolean }> {
+    return this.client.delete("/api/auth/me");
+  }
+
   /** 修改密码后 Go 会撤销全部会话，调用方必须重新登录。 */
   public changePassword(
     currentPassword: string,

@@ -73,6 +73,24 @@ describe("AuthApi security methods", () => {
   });
 });
 
+describe("AuthApi.deleteAccount", () => {
+  it("只向 Go 当前会话注销接口发起 DELETE，不携带可伪造的用户标识", async () => {
+    const del = vi.fn().mockResolvedValue({ deleted: true });
+    const api = new AuthApi({
+      get: vi.fn(),
+      post: vi.fn(),
+      delete: del,
+    } as never);
+
+    await expect(
+      (api as unknown as { deleteAccount(): Promise<{ deleted: boolean }> })
+        .deleteAccount(),
+    ).resolves.toEqual({ deleted: true });
+
+    expect(del).toHaveBeenCalledWith("/api/auth/me");
+  });
+});
+
 const validUser = {
   id: "user-1",
   displayName: "测试用户",

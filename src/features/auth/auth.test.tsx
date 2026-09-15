@@ -332,6 +332,40 @@ describe('Go 自有账号入口', () => {
     expect(screen.getAllByText('状态待确认', { exact: false })).toHaveLength(3)
   })
 
+  it('注销只有精确确认后才提交，并清除本项目前端 Go 会话', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ user: sampleUser }))
+      .mockResolvedValueOnce(jsonResponse({ deleted: true }))
+    vi.stubGlobal('fetch', fetchMock)
+    const sessionStore = new BrowserSessionStore()
+    sessionStore.setToken('go-session-token')
+    const authApi = new AuthApi(new GoApiClient({ baseUrl: goBaseUrl, sessionStore }))
+    const user = userEvent.setup()
+
+    render(
+      <AuthProvider authApi={authApi} sessionStore={sessionStore}>
+        <MemoryRouter>
+          <AccountPage />
+        </MemoryRouter>
+      </AuthProvider>,
+    )
+
+    await screen.findByRole('heading', { name: '用户中心' })
+    const confirmInput = screen.getByLabelText('确认注销')
+    const deleteButton = screen.getByRole('button', { name: '注销账号' })
+    expect(deleteButton).toBeDisabled()
+
+    await user.type(confirmInput, '注销')
+    expect(deleteButton).toBeEnabled()
+    await user.click(deleteButton)
+
+    await waitFor(() => expect(sessionStore.getToken()).toBeNull())
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(`${goBaseUrl}/api/auth/me`)
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({ method: 'DELETE' })
+    expect(screen.getByRole('alert')).toHaveTextContent('登录已失效，请重新登录')
+  })
+
   it('以精确联合类型锁定 Go 内容访问合同', () => {
     const exactContentAccess: Expect<Equal<ContentAccess, 'standard' | 'review_restricted'>> = true
     const reviewRestrictedContentAccess: ContentAccess = 'review_restricted'

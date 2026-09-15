@@ -29,6 +29,7 @@ type AuthContextValue = {
   bindGuest(input: GuestBindingInput): Promise<void>;
   updateDisplayName(displayName: string): Promise<void>;
   revokeAllSessions(): Promise<void>;
+  deleteAccount(): Promise<void>;
   changePassword(currentPassword: string, newPassword: string): Promise<void>;
   logout(): void;
 };
@@ -155,6 +156,18 @@ export function AuthProvider({
         setSessionRestoreState("missing");
         setSessionRestoreError(null);
       },
+      /**
+       * 注销已由 Go 原子完成账户禁用、凭据停用和会话撤销。
+       * 本地只清除新前端保存的 Go 会话；不会触及旧站的任何存储。
+       */
+      deleteAccount: async () => {
+        await authApi.deleteAccount();
+        sessionRequestGenerationRef.current += 1;
+        sessionStore.clear();
+        setUser(null);
+        setSessionRestoreState("expired");
+        setSessionRestoreError(null);
+      },
       changePassword: async (currentPassword, newPassword) => {
         await authApi.changePassword(currentPassword, newPassword);
         sessionRequestGenerationRef.current += 1;
@@ -172,8 +185,8 @@ export function AuthProvider({
       },
     }),
     [
-      authApi,
       completeSession,
+      authApi,
       isLoading,
       sessionRestoreError,
       sessionRestoreState,

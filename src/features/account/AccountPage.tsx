@@ -71,6 +71,7 @@ export function AccountPage() {
     bindGuest,
     updateDisplayName,
     revokeAllSessions,
+    deleteAccount,
     changePassword,
   } = useAuth();
   const [provider, setProvider] = useState("email");
@@ -86,6 +87,9 @@ export function AccountPage() {
   const [newPassword, setNewPassword] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -126,6 +130,22 @@ export function AccountPage() {
       );
     } finally {
       setBinding(false);
+    }
+  }
+
+  /**
+   * 注销目标由 Go 当前会话确定，页面仅做明确文字确认，不能传递用户标识。
+   * 调用成功后 Provider 会清理本项目会话并切换为登录失效状态。
+   */
+  async function submitAccountDeletion() {
+    setDeleteError(null);
+    setDeleting(true);
+    try {
+      await deleteAccount();
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : "注销失败，请稍后重试");
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -191,6 +211,28 @@ export function AccountPage() {
           {revokingSessions ? "退出中…" : "退出所有设备"}
         </button>
         {sessionError ? <p role="alert">{sessionError}</p> : null}
+      </section>
+      <section>
+        <h2>注销账号</h2>
+        <p>
+          输入“注销”后，将使当前账号的全部登录状态立即失效。此操作不会直接删除历史订单或钱包记录。
+        </p>
+        <label>
+          确认注销
+          <input
+            value={deleteConfirmation}
+            onChange={(event) => setDeleteConfirmation(event.target.value)}
+            disabled={deleting}
+          />
+        </label>
+        <button
+          type="button"
+          disabled={deleting || deleteConfirmation !== "注销"}
+          onClick={() => void submitAccountDeletion()}
+        >
+          {deleting ? "注销中…" : "注销账号"}
+        </button>
+        {deleteError ? <p role="alert">{deleteError}</p> : null}
       </section>
       <section>
         <h2>修改密码</h2>

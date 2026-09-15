@@ -48,9 +48,9 @@ export class MediaApi {
 
   public uploadImage(file: File): Promise<UploadedImage> {
     // 先做轻量边界校验，减少无效上传；服务端仍会按字节重新检测类型，不能把前端校验当作安全边界。
-    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp'])
+    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
     if (file.type && !allowedTypes.has(file.type)) {
-      return Promise.reject(createGoApiError(400, 'INVALID_IMAGE', '仅支持 JPG、PNG 或 WebP 图片'))
+      return Promise.reject(createGoApiError(400, 'INVALID_IMAGE', '仅支持 JPG、PNG、WebP 或 GIF 图片'))
     }
     if (file.size === 0 || file.size > 10 * 1024 * 1024) {
       return Promise.reject(createGoApiError(400, file.size === 0 ? 'INVALID_IMAGE' : 'IMAGE_TOO_LARGE', file.size === 0 ? '图片文件无效' : '图片文件超过大小限制'))
@@ -83,7 +83,7 @@ function normalizeTemplates<T extends ImageTemplate | VideoTemplate>(value: unkn
 }
 
 function normalizeUploadedImage(value: unknown): UploadedImage {
-  if (!isRecord(value) || typeof value.id !== 'string' || !value.id.trim() || value.id.includes('/') || typeof value.reference !== 'string' || !isSafeHttpsReference(value.reference) || !['image/jpeg', 'image/png', 'image/webp'].includes(String(value.contentType)) || typeof value.sizeBytes !== 'number' || !Number.isInteger(value.sizeBytes) || value.sizeBytes <= 0 || value.sizeBytes > 10 * 1024 * 1024 || value.downloadUrl !== `/api/media/images/${value.id}`) throw createGoApiError(503, 'INVALID_API_RESPONSE', 'Go API 返回了无效的素材响应')
+  if (!isRecord(value) || typeof value.id !== 'string' || !value.id.trim() || value.id.includes('/') || typeof value.reference !== 'string' || !isSafeHttpsReference(value.reference) || !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(String(value.contentType)) || typeof value.sizeBytes !== 'number' || !Number.isInteger(value.sizeBytes) || value.sizeBytes <= 0 || value.sizeBytes > 10 * 1024 * 1024 || value.downloadUrl !== `/api/media/images/${value.id}`) throw createGoApiError(503, 'INVALID_API_RESPONSE', 'Go API 返回了无效的素材响应')
   return { id: value.id, reference: value.reference, contentType: value.contentType as string, sizeBytes: value.sizeBytes, downloadUrl: value.downloadUrl }
 }
 
