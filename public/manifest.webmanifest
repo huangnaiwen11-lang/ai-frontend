@@ -1,0 +1,10 @@
+{
+  "name": "Cling AI 工作室",
+  "short_name": "Cling AI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#111827",
+  "lang": "zh-CN",
+  "description": "Cling AI 图片、模板编辑和视频创作工作室"
+}

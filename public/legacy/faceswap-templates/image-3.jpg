@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message><BucketName>video-ai-static</BucketName><RequestId>G5C34J1EW3D6QSBG</RequestId><HostId>toYVx0yVVzFBDKirHetS36hK5q3TPZqFbZ5P2b69Yep8arjFoLVtqCn3/8dYmXj1NMQIJpuL4wU=</HostId></Error>

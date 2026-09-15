@@ -1,0 +1,48 @@
+/* 沿用旧版深色素材区域和品牌令牌，限定在创作组件内，不覆盖其它页面。 */
+.creation-image-input { display: grid; gap: 8px; min-width: 0; }
+.creation-image-input__surface {
+  position: relative;
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface-elevated);
+  border: 1px dashed var(--border-2);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.creation-image-input__surface input { width: 100%; min-width: 0; padding-right: 40px; }
+.creation-image-input__preview {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  background: var(--surface-base);
+  border-radius: 8px;
+}
+.creation-image-input__placeholder { justify-self: center; margin: 28px 0; color: var(--text-3); }
+.creation-image-input__surface .creation-image-input__remove {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: var(--surface-base);
+  color: var(--text-1);
+  border: 1px solid var(--border-2);
+  border-radius: 50%;
+}
+.creation-image-input__remove:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.creation-image-input__remove:disabled { opacity: 0.45; cursor: not-allowed; }
+.creation-result { min-width: 0; margin-top: 24px; }
+.creation-result__media {
+  display: block;
+  width: 100%;
+  max-height: 65vh;
+  object-fit: contain;
+  background: var(--surface-base);
+  border-radius: 8px;
+}
+.creation-result__original { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; }

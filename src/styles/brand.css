@@ -1,0 +1,29 @@
+/* 取自旧 frontend/src/critical.css 的 Cling 主站令牌，不继承其它产品站主题。 */
+@font-face { font-family: Livvic; font-style: normal; font-weight: 400; font-display: swap; src: url('/legacy/fonts/livvic-400.woff2') format('woff2'); }
+@font-face { font-family: Livvic; font-style: normal; font-weight: 600; font-display: swap; src: url('/legacy/fonts/livvic-600.woff2') format('woff2'); }
+:root {
+  --brand: #f97316;
+  --brand-light: #fb923c;
+  --brand-rose: #f43f5e;
+  --surface-base: #090807;
+  --surface-elevated: #14110f;
+  --text-1: #fff8ed;
+  --text-2: rgba(255, 248, 237, 0.74);
+  --text-3: rgba(255, 248, 237, 0.5);
+  --border-1: rgba(255, 232, 198, 0.085);
+  --border-2: rgba(255, 232, 198, 0.16);
+  --app-frame-width: 560px;
+  --app-sidenav-width: 80px;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--surface-base);
+  color: var(--text-1);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Livvic, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: 0;
+}
+button, input, textarea, select { font: inherit; }
+/* 登录和公共页面不经过应用壳，链接也必须适配全局深色背景。 */
+a, a:visited { color: var(--brand-light); }

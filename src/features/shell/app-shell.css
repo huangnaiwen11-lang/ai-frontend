@@ -1,0 +1,161 @@
+@import '../../styles/brand.css';
+
+.app-shell {
+  min-height: 100vh;
+  color: var(--text-1);
+  background: var(--surface-base);
+}
+
+.app-shell__header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  min-height: 4rem;
+  padding: 0 1.5rem;
+  background: var(--surface-elevated);
+  border-bottom: 1px solid var(--border-1);
+  /* 此处不能使用 backdrop-filter，它会让移动底栏的 fixed 定位改为相对 header。 */
+}
+
+.app-shell__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.app-shell__brand img {
+  width: 1.75rem;
+  height: 1.75rem;
+  object-fit: contain;
+}
+
+.app-shell__brand-accent { color: var(--brand-light); }
+.app-shell__primary, .app-shell__secondary { display: flex; gap: 8px; }
+.app-shell__navigation a, .app-shell__session a, .app-shell__session button {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 44px;
+}
+.app-shell__navigation a[aria-current='page'] { color: var(--brand-light); }
+.app-shell__primary {
+  position: fixed; inset: auto 0 0; z-index: 20;
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  background: var(--surface-elevated); border-top: 1px solid var(--border-1);
+}
+.app-shell__primary a { flex-direction: column; font-size: 12px; }
+.app-shell__secondary { margin-left: auto; }
+.app-shell__secondary a { width: 36px; }
+.app-shell__secondary a span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+
+.app-shell__navigation {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+}
+
+.app-shell__navigation a,
+.app-shell__session a,
+.app-shell__session button {
+  color: var(--text-2);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.app-shell__session button {
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+
+.app-shell__header a:focus-visible,
+.app-shell__header button:focus-visible {
+  outline: 3px solid #5c7cff;
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
+.app-shell__content {
+  width: min(100%, var(--app-frame-width));
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  padding-bottom: calc(100px + env(safe-area-inset-bottom));
+}
+
+/* 恢复旧主站的居中内容宽度；充值图片只属于充值页，不应成为所有页面的背景。 */
+.app-shell__content main {
+  color: var(--text-1);
+}
+
+.app-shell__content form { display: grid; gap: 20px; }
+.app-shell__content form > label { display: grid; gap: 8px; min-width: 0; }
+.app-shell__content h1 { font-size: 24px; line-height: 1.3; margin: 0 0 24px; }
+.app-shell__content textarea { min-height: 112px; resize: vertical; }
+.app-shell__content select, .app-shell__content textarea,
+.app-shell__content input:not([type='radio']):not([type='checkbox']) { width: 100%; padding: 10px 12px; }
+.app-shell__content select option { background: var(--surface-elevated); }
+.app-shell__content button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.app-shell__content a {
+  color: #ff9b78;
+}
+
+.app-shell__content button {
+  border: 1px solid rgba(255, 155, 120, 0.45);
+  border-radius: 0.75rem;
+  color: #fff;
+  background: linear-gradient(135deg, var(--brand), var(--brand-rose));
+  padding: 0.65rem 1rem;
+}
+
+.app-shell__content textarea,
+.app-shell__content input,
+.app-shell__content select {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 0.65rem;
+}
+
+@media (max-width: 42rem) {
+  .app-shell__header {
+    gap: 8px;
+    padding: 8px 12px;
+  }
+
+  .app-shell__navigation {
+    gap: 0;
+  }
+
+  .app-shell__content {
+    padding: 24px 16px calc(100px + env(safe-area-inset-bottom));
+  }
+  .app-shell__session span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+}
+
+/* 对齐旧主站 1024px 断点、80px 导航栏和 560px 居中内容框。 */
+@media (min-width: 1024px) {
+  .app-shell { padding-left: var(--app-sidenav-width); }
+  .app-shell__header {
+    position: fixed; inset: 0 auto 0 0; z-index: 20;
+    width: var(--app-sidenav-width); padding: 24px 8px;
+    flex-direction: column; gap: 24px; overflow-y: auto;
+    border-right: 1px solid var(--border-1); border-bottom: 0;
+  }
+  .app-shell__brand { flex-direction: column; gap: 0; line-height: 1.1; }
+  .app-shell__navigation { flex-direction: column; flex-wrap: nowrap; width: 100%; gap: 24px; }
+  .app-shell__primary { position: static; display: flex; flex-direction: column; padding: 0; border: 0; background: none; }
+  .app-shell__secondary { flex-direction: column; margin: auto 0 0; }
+  .app-shell__navigation a { width: 100%; min-height: 52px; border-radius: 8px; }
+  .app-shell__navigation a span { white-space: nowrap; }
+  .app-shell__navigation a:hover { background: rgba(255, 255, 255, 0.06); }
+  .app-shell__secondary a { flex-direction: column; font-size: 11px; }
+  .app-shell__secondary a span { position: static; width: auto; height: auto; overflow: visible; clip-path: none; }
+  .app-shell__session a, .app-shell__session button { flex-direction: column; font-size: 11px; }
+  .app-shell__content { padding-top: 32px; }
+}

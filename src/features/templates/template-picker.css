@@ -1,0 +1,32 @@
+/* 对齐旧 PresetGrid 的两列封面与底部标题；选中态由原生 radio 提供键盘语义。 */
+.template-picker { min-width: 0; }
+.template-picker__select { display: grid; gap: 8px; margin-bottom: 16px; }
+.template-picker__grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.template-picker__card {
+  position: relative;
+  display: block;
+  aspect-ratio: 3 / 4;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border-2, #49413b);
+  border-radius: 12px;
+  background: var(--surface-elevated, #14110f);
+  cursor: pointer;
+}
+.template-picker__card:has(input:checked) { outline: 2px solid var(--brand, #f97316); outline-offset: 2px; }
+.template-picker__card:has(input:focus-visible) { outline: 3px solid #fff; outline-offset: 3px; }
+.template-picker__card:has(input:disabled) { opacity: 0.6; cursor: wait; }
+.template-picker__card input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.template-picker__card img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.template-picker__title {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 28px 12px 12px;
+  color: #fff8ed;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+}
+.template-picker__missing { display: grid; height: 100%; place-items: center; color: var(--text-3, #999); font-size: 13px; }
