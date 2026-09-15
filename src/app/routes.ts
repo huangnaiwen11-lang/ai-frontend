@@ -27,8 +27,8 @@ export const ROUTES = {
  * 旧前端公开过的深链兼容规则。
  *
  * 保留路径兼容能防止书签、搜索引擎收录和旧客户端链接直接失效；但绝不继承
- * 查询参数。特别是已废弃的 Animate 链接中的模板、提示词或自动提交参数，不能
- * 被带到新页面，以免绕过用户主动选择或意外触发生成。
+ * 查询参数，避免历史链接中的模板、提示词或自动提交参数绕过用户主动选择，
+ * 或意外触发新的生成任务。
  */
 export interface LegacyRouteRedirect {
   /** 兼容链接最终进入的规范页面。 */
@@ -43,7 +43,7 @@ const discardSearchRedirect = (
 
 /**
  * 旧 URL 到规范路由的唯一映射。
- * Animate 已移除，仍只兼容其页面级入口，不转移任何旧任务配置。
+ * 已下线能力不登记映射，确保历史深链不会变相落入其它可创建任务的页面。
  */
 export const LEGACY_ROUTE_REDIRECTS: Readonly<
   Partial<Record<string, LegacyRouteRedirect>>
@@ -67,7 +67,6 @@ export const LEGACY_ROUTE_REDIRECTS: Readonly<
   "/face-swap": discardSearchRedirect(ROUTES.studioEdit),
 
   "/create/video": discardSearchRedirect(ROUTES.studioVideo),
-  "/create/animate": discardSearchRedirect(ROUTES.studioVideo),
   "/photo-to-video": discardSearchRedirect(ROUTES.studioVideo),
 
   "/recharge": discardSearchRedirect(ROUTES.wallet),
@@ -75,6 +74,11 @@ export const LEGACY_ROUTE_REDIRECTS: Readonly<
   "/profile": discardSearchRedirect(ROUTES.account),
   "/settings/profile": discardSearchRedirect(ROUTES.account),
   "/settings/account": discardSearchRedirect(ROUTES.account),
+  // 这三条旧设置页均已有对应的 Go 自有用户域能力：安全与绑定收敛到用户中心，
+  // 通知设置收敛到通知中心。统一丢弃旧查询参数，避免携带 Node 页面状态。
+  "/settings/security": discardSearchRedirect(ROUTES.account),
+  "/settings/link-accounts": discardSearchRedirect(ROUTES.account),
+  "/settings/notifications": discardSearchRedirect(ROUTES.notifications),
 };
 
 /**

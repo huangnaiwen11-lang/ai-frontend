@@ -75,7 +75,6 @@ describe("路由契约", () => {
       "/face-swap": { target: ROUTES.studioEdit, preserveSearch: false },
 
       "/create/video": { target: ROUTES.studioVideo, preserveSearch: false },
-      "/create/animate": { target: ROUTES.studioVideo, preserveSearch: false },
       "/photo-to-video": { target: ROUTES.studioVideo, preserveSearch: false },
 
       "/recharge": { target: ROUTES.wallet, preserveSearch: false },
@@ -83,20 +82,17 @@ describe("路由契约", () => {
       "/profile": { target: ROUTES.account, preserveSearch: false },
       "/settings/profile": { target: ROUTES.account, preserveSearch: false },
       "/settings/account": { target: ROUTES.account, preserveSearch: false },
+      "/settings/security": { target: ROUTES.account, preserveSearch: false },
+      "/settings/link-accounts": { target: ROUTES.account, preserveSearch: false },
+      "/settings/notifications": { target: ROUTES.notifications, preserveSearch: false },
     });
   });
 
   it("只为已登记的旧深链返回兼容映射", () => {
     expect(getLegacyRouteRedirect("/not-a-legacy-route")).toBeUndefined();
 
-    const animateRedirect = getLegacyRouteRedirect("/create/animate");
-    expect(animateRedirect).toBeDefined();
-    if (!animateRedirect) {
-      throw new Error("已登记的 Animate 深链必须存在兼容映射");
-    }
-
-    expect(animateRedirect.target).toBe(ROUTES.studioVideo);
-    expect(animateRedirect.preserveSearch).toBe(false);
+    // Animate 已明确废弃：旧链接不能再把用户带到任意可创建任务的页面。
+    expect(getLegacyRouteRedirect("/create/animate")).toBeUndefined();
   });
 
   it("规范路由中不再暴露 Animate 入口", () => {

@@ -1,0 +1,39 @@
+.about-page {
+  color: var(--text-primary, #f8f7f5);
+  margin: 0 auto;
+  max-width: 760px;
+  padding: 28px 20px 48px;
+}
+
+.about-page__hero {
+  background: linear-gradient(135deg, rgba(255, 90, 24, 0.18), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  padding: 28px;
+}
+
+.about-page__eyebrow {
+  color: #ff6a2a;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  margin: 0 0 8px;
+}
+
+.about-page h1 { font-size: clamp(30px, 6vw, 42px); letter-spacing: -0.04em; margin: 0; }
+.about-page h2 { font-size: 18px; margin: 32px 0 14px; }
+.about-page h3 { font-size: 16px; margin: 14px 0 6px; }
+.about-page p { color: var(--text-secondary, #b9b6b1); line-height: 1.65; }
+
+.about-page__capabilities { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.about-page__capability { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 18px; padding: 18px; }
+.about-page__capability svg { color: #ff6a2a; }
+.about-page__capability p { font-size: 14px; margin: 0; }
+
+.about-page__links { display: grid; gap: 10px; }
+.about-page__links a { align-items: center; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: inherit; display: flex; font-weight: 650; gap: 10px; min-height: 48px; padding: 0 14px; text-decoration: none; }
+.about-page__links a:hover { background: rgba(255, 255, 255, 0.08); }
+.about-page__links a:focus-visible { outline: 3px solid #ffb086; outline-offset: 3px; }
+.about-page__version { font-size: 13px; margin: 28px 0 0; text-align: center; }
+
+@media (max-width: 600px) { .about-page__capabilities { grid-template-columns: 1fr; } }

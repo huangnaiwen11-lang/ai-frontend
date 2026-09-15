@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useParams } from "react-router-dom";
 import { AuthApi } from "../api/auth";
 import { resolveApiBaseUrl } from "../api/config";
 import { GoApiClient } from "../api/http";
@@ -18,6 +18,8 @@ import { WorksPage } from "../features/works/WorksPage";
 import { WorkDetailPage } from "../features/works/WorkDetailPage";
 import { FaqPage } from "../features/public-pages/pages/FaqPage";
 import { DocumentPage } from "../features/public-pages/pages/DocumentPage";
+import { PwaInstallPage } from "../features/public-pages/pages/PwaInstallPage";
+import { AboutPage } from "../features/public-pages/pages/AboutPage";
 import { AuthenticatedFeedbackPage } from "../features/public-pages/pages/AuthenticatedFeedbackPage";
 import { NotificationsPage } from "../features/notifications/NotificationsPage";
 import { PublicHomePage } from "../features/home/PublicHomePage";
@@ -58,6 +60,20 @@ function LegacyRouteNavigate({ pathname }: { pathname: string }) {
   return <Navigate to={redirect?.target ?? ROUTES.home} replace />;
 }
 
+/**
+ * 旧加密支付页只能迁移已有订单的只读结果查询，不能重新打开旧收银台。
+ * 仅转交受限订单号，旧页面附带的金额、币种、跳转地址等参数一律舍弃，
+ * 防止它们伪造到账状态或把用户带到外部页面。
+ */
+function LegacyCryptoPaymentRoute() {
+  const { orderId } = useParams<{ orderId: string }>();
+  const normalizedOrderID = orderId?.trim() ?? "";
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(normalizedOrderID)) {
+    return <Navigate to={ROUTES.home} replace />;
+  }
+  return <Navigate to={`${ROUTES.paymentResult}?orderId=${encodeURIComponent(normalizedOrderID)}`} replace />;
+}
+
 export function AppRoutes() {
   return (
     <Routes>
@@ -65,6 +81,9 @@ export function AppRoutes() {
       <Route path="/legal/privacy" element={<Navigate to={ROUTES.privacy} replace />} />
       <Route path="/legal/terms" element={<Navigate to={ROUTES.terms} replace />} />
       <Route path={ROUTES.faq} element={<FaqPage />} />
+      {/* 安装页是公开静态页，不能因恢复会话而读取私人数据或发起业务请求。 */}
+      <Route path="/get-app" element={<PwaInstallPage />} />
+      <Route path="/install" element={<PwaInstallPage />} />
       <Route
         path={ROUTES.privacy}
         element={<DocumentPage documentKey="privacy" />}
@@ -118,11 +137,13 @@ function AuthenticatedRoutes() {
         <Route path={`${ROUTES.works}/:workId`} element={<WorkDetailPage />} />
         <Route path={ROUTES.wallet} element={<PaymentReturnRoute />} />
         <Route path={ROUTES.paymentResult} element={<PaymentResultPage />} />
+        <Route path="/pay/crypto/:orderId" element={<LegacyCryptoPaymentRoute />} />
         <Route path="/wallet/recharge" element={<PaymentReturnRoute />} />
         <Route path="/recharge" element={<PaymentReturnRoute legacy />} />
         <Route path="/payment" element={<PaymentReturnRoute legacy />} />
         <Route path={ROUTES.account} element={<AccountPage />} />
         <Route path={ROUTES.settings} element={<AccountPage />} />
+        <Route path="/settings/about" element={<AboutPage />} />
         <Route path={ROUTES.feedback} element={<FeedbackRoute />} />
         <Route path={ROUTES.notifications} element={<NotificationsPage />} />
       </Route>

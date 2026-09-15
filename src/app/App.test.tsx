@@ -23,6 +23,19 @@ describe('App', () => {
     expect(fetchMock.mock.calls.every(([url, options]) => url.endsWith('/api/payments/order-status/order-1') && options.method === 'GET')).toBe(true)
     expect(screen.queryByText('支付成功，钻石已到账')).not.toBeInTheDocument()
   })
+
+  it('旧加密支付地址只携带订单号进入 Go 只读结果页，不恢复旧支付参数', async () => {
+    window.history.pushState({}, '', '/pay/crypto/order-1?amount=999&redirect=https://unsafe.example')
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ orderId: 'order-1', productId: 'coins_100', status: 'pending', provider: 'paycores', amountCents: 299, currency: 'USD', credits: 100, paymentReceived: false, backendReady: false }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    expect(await screen.findByText('等待付款确认')).toBeInTheDocument()
+    expect(window.location.pathname).toBe(ROUTES.paymentResult)
+    expect(window.location.search).toBe('?orderId=order-1')
+    expect(fetchMock.mock.calls.every(([url, options]) => url.endsWith('/api/payments/order-status/order-1') && options.method === 'GET')).toBe(true)
+  })
   it.each([
     ['/video', '视频创作', ROUTES.studioVideo],
     ['/image', '模板图片编辑', ROUTES.studioEdit],
@@ -80,6 +93,34 @@ describe('App', () => {
       expect(screen.queryByText(/Animate/i)).not.toBeInTheDocument()
     },
   )
+
+  it.each(['/get-app', '/install'])('PWA 安装入口 %s 不恢复会话或调用业务接口', async (pathname) => {
+    window.history.pushState({}, '', pathname)
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: '安装 Cling AI' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '进入网页版' })).toBeInTheDocument()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('旧关于页保留在应用壳内，只展示三项已保留创作能力', async () => {
+    window.history.pushState({}, '', '/settings/about')
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: '关于 Cling AI' })).toBeInTheDocument()
+    expect(screen.getByText('文生图')).toBeInTheDocument()
+    expect(screen.getByText('模板图编辑')).toBeInTheDocument()
+    expect(screen.getByText('模板图生视频')).toBeInTheDocument()
+    expect(screen.queryByText('Animate')).not.toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: '主导航' })).toBeInTheDocument()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
 
   it('未确认年龄时首页只显示年龄确认，不挂载成人内容或应用壳', async () => {
     window.history.pushState({}, '', '/')
@@ -176,14 +217,14 @@ describe('App', () => {
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('废弃 Animate 深链只跳至视频创作并丢弃旧查询参数', async () => {
+  it('废弃 Animate 深链不再进入任何创作页，也不会带入旧查询参数', async () => {
     window.history.pushState({}, '', '/create/animate?template=x&prompt=y&autoSubmit=true')
 
     render(<App />)
 
-    expect(await screen.findByRole('heading', { name: '视频创作' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '年龄确认' })).toBeInTheDocument()
     expect(screen.queryByText('Animate')).not.toBeInTheDocument()
-    expect(window.location.pathname).toBe(ROUTES.studioVideo)
+    expect(window.location.pathname).toBe(ROUTES.home)
     expect(window.location.search).toBe('')
   })
 
@@ -235,6 +276,23 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { name: '我的作品' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: '通知' })).not.toBeInTheDocument()
     expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['/settings/profile', '用户中心', ROUTES.account],
+    ['/settings/security', '用户中心', ROUTES.account],
+    ['/settings/link-accounts', '用户中心', ROUTES.account],
+    ['/settings/notifications', '通知', ROUTES.notifications],
+  ])('旧设置深链 %s 归并到已有 Go 用户域页面：%s', async (pathname, heading, target) => {
+    window.history.pushState({}, '', pathname)
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ items: [], unreadCount: 0 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    render(<App />)
+
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
+    expect(window.location.pathname).toBe(target)
+    expect(screen.queryByText('用 AI 释放你的创作想象')).not.toBeInTheDocument()
   })
 
   it('未登录访问视频创作时只通过 Go 目录展示返回的 SFW 模板', async () => {
