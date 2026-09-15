@@ -52,7 +52,7 @@ function FeedbackRoute() {
 
 /**
  * 旧链接只负责把用户带至规范页面，特意不读取 location.search。
- * 这样 Animate 等历史链接携带的模板、提示词和自动提交参数不会触发新任务。
+ * 这样已下线能力的历史链接携带的模板、提示词和自动提交参数不会触发新任务。
  */
 function LegacyRouteNavigate({ pathname }: { pathname: string }) {
   const redirect = getLegacyRouteRedirect(pathname);
