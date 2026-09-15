@@ -18,8 +18,8 @@ export type NotificationPage = { items: NotificationItem[]; unreadCount: number 
 export class NotificationsApi {
   public constructor(private readonly client: GoApiClient) {}
 
-  public list(limit = 50): Promise<NotificationPage> {
-    return this.client.get('/api/notifications', { limit })
+  public list(limit = 50, unreadOnly = false): Promise<NotificationPage> {
+    return this.client.get('/api/notifications', unreadOnly ? { limit, unreadOnly: 'true' } : { limit })
   }
 
   public unreadCount(): Promise<{ count: number }> {
@@ -36,6 +36,11 @@ export class NotificationsApi {
 
   public remove(id: string): Promise<{ id: string; deleted: boolean }> {
     return this.client.delete(`/api/notifications/${notificationId(id)}`)
+  }
+
+  /** 只清除当前会话下已读记录；服务端固定删除条件，前端不传筛选范围。 */
+  public clearRead(): Promise<{ deleted: number }> {
+    return this.client.delete('/api/notifications')
   }
 }
 

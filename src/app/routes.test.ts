@@ -21,6 +21,7 @@ describe("路由契约", () => {
       "studioVideo",
       "works",
       "wallet",
+      "paymentResult",
       "account",
       "settings",
       "faq",
@@ -39,6 +40,7 @@ describe("路由契约", () => {
       studioVideo: "/studio/video",
       works: "/works",
       wallet: "/wallet",
+      paymentResult: "/payment/result",
       account: "/me",
       settings: "/settings",
       faq: "/faq",
@@ -52,6 +54,14 @@ describe("路由契约", () => {
 
   it("为每个旧深链指定唯一目标并始终丢弃查询参数", () => {
     expect(LEGACY_ROUTE_REDIRECTS).toEqual({
+      "/video": { target: ROUTES.studioVideo, preserveSearch: false },
+      "/image": { target: ROUTES.studioEdit, preserveSearch: false },
+      "/faceswap": { target: ROUTES.studioEdit, preserveSearch: false },
+      "/create/faceswap": { target: ROUTES.studioEdit, preserveSearch: false },
+      "/create/undress": { target: ROUTES.studioEdit, preserveSearch: false },
+      "/dress-up": { target: ROUTES.studioImage, preserveSearch: false },
+      "/legal/privacy": { target: ROUTES.privacy, preserveSearch: false },
+      "/legal/terms": { target: ROUTES.terms, preserveSearch: false },
       "/create/image": { target: ROUTES.studioImage, preserveSearch: false },
       "/image-generator": { target: ROUTES.studioImage, preserveSearch: false },
 

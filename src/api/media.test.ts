@@ -6,6 +6,19 @@ const client = () => ({ get: vi.fn(), postForm: vi.fn() }) as any
 const file = (type: string, size: number, name = 'x.bin') => new File([new Uint8Array(size)], name, { type })
 
 describe('MediaApi', () => {
+  it('只保留模板展示媒体与标签，不透传技术和结算字段', async () => {
+    const c = client()
+    const template = { id: 'video-1', title: '城市漫步', type: 'video', contentRating: 'sfw', videoUrl: '/full.mp4', previewVideoUrl: '/preview.mp4', tag: '旅行', badge: 'new' }
+    c.get.mockResolvedValue({ items: [{ ...template, recipe: 'secret', balance: 100, model: 'private' }], total: 1 })
+    await expect(new MediaApi(c).listVideoTemplates()).resolves.toEqual({ items: [template], total: 1 })
+  })
+
+  it.each(['videoUrl', 'previewVideoUrl', 'tag', 'badge'])('拒绝畸形展示字段 %s', async (field) => {
+    const c = client()
+    c.get.mockResolvedValue({ items: [{ id: 'v1', title: '模板', type: 'video', contentRating: 'sfw', [field]: 42 }], total: 1 })
+    await expect(new MediaApi(c).listVideoTemplates()).rejects.toMatchObject({ code: 'INVALID_API_RESPONSE' })
+  })
+
   it('视频目录保留封面但不透出模型配方', async () => {
     const c = client()
     c.get.mockResolvedValue({ items: [{ id: 'video-1', title: '城市漫步', type: 'video', contentRating: 'sfw', coverUrl: '/cover.jpg', recipe: 'private' }], total: 1 })

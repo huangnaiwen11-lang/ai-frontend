@@ -1,4 +1,6 @@
 import type { GoApiClient } from './http'
+import { isPaymentOrderId, parseOrder, parseProducts, type PaymentOrderStatus, type PaymentProduct } from './payment-contract'
+export type { PaymentOrderStatus, PaymentProduct } from './payment-contract'
 
 export type CheckoutResult = {
   orderId: string
@@ -22,6 +24,15 @@ export type VerifyPurchaseInput = {
  */
 export class PaymentApi {
   public constructor(private readonly client: GoApiClient) {}
+
+  public async listProducts(): Promise<{ products: PaymentProduct[] }> {
+    return parseProducts(await this.client.get('/api/wallet/products'))
+  }
+
+  public async getOrderStatus(orderId: string): Promise<PaymentOrderStatus> {
+    if (!isPaymentOrderId(orderId)) throw new Error('订单编号无效')
+    return parseOrder(await this.client.get(`/api/payments/order-status/${orderId}`), orderId)
+  }
 
   public createCheckout(input: { productId: string }): Promise<CheckoutResult> {
     return this.client.post('/api/wallet/create-external-checkout', input)

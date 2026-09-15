@@ -16,6 +16,8 @@ const goBaseUrl = 'http://127.0.0.1:18000'
 describe('Go 自有账号入口', () => {
   beforeEach(() => {
     window.sessionStorage.clear()
+    // 原有用例关注 Go 会话合同，显式记录已完成本项目年龄确认。
+    window.localStorage.setItem('ai-frontend-service.age-confirmed', 'true')
   })
 
   afterEach(() => {

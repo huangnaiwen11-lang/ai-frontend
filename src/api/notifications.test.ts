@@ -30,9 +30,21 @@ describe('NotificationsApi', () => {
     expect(fetchMock.mock.calls[0]?.[0]).toBe(`${baseUrl}/api/notifications/n-1/read`)
     expect(() => api.remove('../other')).toThrow('通知 ID 无效')
   })
+
+  it('清除已读通知只调用无参数的当前用户路径', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ deleted: 2 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const api = new NotificationsApi(new GoApiClient({ baseUrl, sessionStore }))
+
+    await api.clearRead()
+
+    const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit]
+    expect(url).toBe(`${baseUrl}/api/notifications`)
+    expect(init.method).toBe('DELETE')
+    expect(url).not.toMatch(/userId|all=|node|wallet/i)
+  })
 })
 
 function jsonResponse(data: unknown): Response {
   return new Response(JSON.stringify({ success: true, data }), { headers: { 'Content-Type': 'application/json' } })
 }
-

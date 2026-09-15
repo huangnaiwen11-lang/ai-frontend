@@ -1,0 +1,22 @@
+/* 复用旧主站的紧凑充值层级和品牌令牌；不将其它页面的背景套进钱包。 */
+.payment-page h2, .payment-checkout h2 { font-size: 18px; display: flex; align-items: center; gap: 8px; }
+.payment-checkout { margin: 28px 0; border-top: 1px solid var(--border-2); padding-top: 12px; }
+.payment-products { border: 0; margin: 12px 0; padding: 0; display: grid; gap: 10px; min-width: 0; }
+.payment-products legend { font-size: 14px; margin-bottom: 12px; color: var(--text-2); }
+.payment-product { display: grid; grid-template-columns: 20px minmax(0, 1fr) auto; gap: 10px; align-items: center; min-height: 76px; padding: 12px; border: 1px solid var(--border-2); border-radius: 8px; background: var(--surface-elevated); cursor: pointer; }
+.payment-product:has(input:checked) { border-color: var(--brand-light); background: #201611; }
+.payment-product:has(input:focus-visible) { outline: 2px solid var(--brand-light); outline-offset: 3px; }
+.payment-product input { accent-color: var(--brand); margin: 0; width: 18px; height: 18px; }
+.payment-product strong { font-size: 15px; overflow-wrap: anywhere; }
+.payment-product small { display: block; color: var(--text-2); margin-top: 4px; }
+.payment-product__price { font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.payment-checkout button, .payment-order button { display: inline-flex; gap: 8px; align-items: center; justify-content: center; min-height: 44px; }
+.payment-submit { width: 100%; }
+.payment-checkout__result { display: grid; gap: 12px; padding-top: 16px; }
+.payment-checkout__result a { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; }
+.payment-order { padding: 0 0 24px; }
+.payment-order h2 { font-size: 18px; line-height: 1.5; }
+.payment-order svg { flex-shrink: 0; }
+.payment-order dl { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 12px; line-height: 1.5; font-size: 14px; }
+.payment-order dt { color: var(--text-2); }
+.payment-order dd { margin: 0; overflow-wrap: anywhere; }

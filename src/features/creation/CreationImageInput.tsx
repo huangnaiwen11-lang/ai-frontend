@@ -34,7 +34,7 @@ export function CreationImageInput({ label, file, onChange, disabled, required }
     <label htmlFor={id}>{label}</label>
     <div className="creation-image-input__surface">
       <input ref={input} id={id} type="file" accept="image/jpeg,image/png,image/webp"
-        disabled={disabled} required={required}
+        disabled={disabled} required={required && !file}
         onChange={(event) => {
           const selected = event.target.files?.[0]
           // 关闭文件选择器不撤销已有选择；只有明确移除才清空业务输入。

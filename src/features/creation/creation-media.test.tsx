@@ -27,6 +27,7 @@ describe.each(fixtures)('$kind 素材展示', (fixture) => {
   it('选图只在本地预览，移除后可以再次选择同一文件，卸载释放地址', async () => {
     const { fetchFn, unmount } = mount(fixture.page)
     await screen.findByRole('option', { name: '模板' })
+    fireEvent.change(screen.getByLabelText(fixture.template), { target: { value: 'template-1' } })
     const input = screen.getByLabelText(fixture.label)
     fireEvent.change(input, { target: { files: [file] } })
     const firstURL = screen.getByAltText('已选图片预览').getAttribute('src')

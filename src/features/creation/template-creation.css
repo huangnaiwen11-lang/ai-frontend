@@ -1,0 +1,20 @@
+/* 表单只有一份，固定底部提交区，长内容在弹层内部滚动。 */
+.template-creation__form { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.template-creation__scroll { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px 16px; }
+.template-creation__cover { display: grid; place-items: center; width: 100%; height: 26dvh; min-height: 100px; max-height: 240px; overflow: hidden; border-radius: 8px; background: #000; margin-bottom: 16px; }
+.template-creation__cover img, .template-creation__cover video { display: block; width: 100%; height: 100%; min-height: 0; object-fit: contain; }
+.template-creation__missing { margin: 0 0 16px; color: var(--text-3); }
+.template-creation__fields { display: grid; gap: 16px; }
+.template-creation__fields label { display: grid; gap: 8px; min-width: 0; }
+.template-creation__fields input, .template-creation__fields textarea, .template-creation__fields select {
+  width: 100%; min-width: 0; padding: 10px 12px; color: var(--text-1);
+  background: var(--surface-base); border: 1px solid var(--border-2); border-radius: 8px;
+}
+.template-creation__fields textarea { min-height: 96px; resize: vertical; }
+.template-creation__fields select option { background: var(--surface-elevated); }
+.template-creation__fields input:focus-visible, .template-creation__fields textarea:focus-visible, .template-creation__fields select:focus-visible { outline: 2px solid var(--brand-light); outline-offset: 2px; }
+.template-creation__form button:disabled { opacity: 0.5; cursor: not-allowed; }
+.template-creation__form .creation-image-input__preview { max-height: 28dvh; }
+.template-creation__form .creation-image-input__placeholder { margin: 12px 0; }
+.template-creation__form .creation-image-input__surface input { padding-right: 40px; }
+.template-creation__resume { margin-top: 20px; }

@@ -16,6 +16,16 @@
 .template-picker__card:has(input:checked) { outline: 2px solid var(--brand, #f97316); outline-offset: 2px; }
 .template-picker__card:has(input:focus-visible) { outline: 3px solid #fff; outline-offset: 3px; }
 .template-picker__card:has(input:disabled) { opacity: 0.6; cursor: wait; }
+.template-picker__choice { display: block; width: 100%; height: 100%; cursor: inherit; }
+/* 预览按钮独立于选中 label，点击预览不会顺带修改模板。 */
+.template-picker__card .template-picker__preview {
+  position: absolute; top: 8px; right: 8px; display: grid; place-items: center;
+  width: 36px; height: 36px; padding: 0; border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(0, 0, 0, 0.65); color: #fff;
+  cursor: pointer;
+}
+.template-picker__preview:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+.template-picker__preview:disabled { opacity: 0.45; cursor: not-allowed; }
 .template-picker__card input { position: absolute; opacity: 0; width: 1px; height: 1px; }
 .template-picker__card img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .template-picker__title {

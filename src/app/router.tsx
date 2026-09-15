@@ -12,13 +12,15 @@ import { AccountPage } from "../features/account/AccountPage";
 import { ImageCreationPage } from "../features/creation/ImageCreationPage";
 import { TemplateImageEditPage } from "../features/creation/TemplateImageEditPage";
 import { VideoCreationPage } from "../features/creation/VideoCreationPage";
-import { PaymentPage } from "../features/payment/PaymentPage";
+import { PaymentResultPage } from "../features/payment/PaymentResultPage";
+import { PaymentReturnRoute } from "../features/payment/PaymentReturnRoute";
 import { WorksPage } from "../features/works/WorksPage";
 import { WorkDetailPage } from "../features/works/WorkDetailPage";
 import { FaqPage } from "../features/public-pages/pages/FaqPage";
 import { DocumentPage } from "../features/public-pages/pages/DocumentPage";
 import { AuthenticatedFeedbackPage } from "../features/public-pages/pages/AuthenticatedFeedbackPage";
 import { NotificationsPage } from "../features/notifications/NotificationsPage";
+import { PublicHomePage } from "../features/home/PublicHomePage";
 import { GoApiProvider } from "./GoApiProvider";
 import {
   getLegacyRouteRedirect,
@@ -26,16 +28,16 @@ import {
   ROUTES,
 } from "./routes";
 
-/** 已登录首页沿用旧 HomeGate 的视频入口；身份只取 Go 会话，不读取旧 Node Token。 */
-function StudioHomePage() {
-  const { user } = useAuth();
+/**
+ * 首页沿用旧 HomeGate：恢复 Go 会话期间不显示访客内容；已登录直接进入视频创作，
+ * 未登录才渲染带年龄门禁的公开首页。
+ */
+function HomeRoute() {
+  const { user, isLoading, sessionRestoreError } = useAuth();
+  if (isLoading) return <main role="status">正在恢复登录状态</main>;
+  if (sessionRestoreError) return <main role="alert">{sessionRestoreError}</main>;
   if (user) return <Navigate to={ROUTES.studioVideo} replace />;
-  return (
-    <>
-      <h1>Cling AI 工作室</h1>
-      <p>新前端仅通过 Go API Gateway 提供创作能力。</p>
-    </>
-  );
+  return <PublicHomePage />;
 }
 
 /** 先恢复 Go 会话再判断反馈入口，避免外层公共路由把已登录用户也重定向出去。 */
@@ -59,6 +61,9 @@ function LegacyRouteNavigate({ pathname }: { pathname: string }) {
 export function AppRoutes() {
   return (
     <Routes>
+      {/* 法律页别名在认证 Provider 外承接，公共内容不读取任何 Go 会话。 */}
+      <Route path="/legal/privacy" element={<Navigate to={ROUTES.privacy} replace />} />
+      <Route path="/legal/terms" element={<Navigate to={ROUTES.terms} replace />} />
       <Route path={ROUTES.faq} element={<FaqPage />} />
       <Route
         path={ROUTES.privacy}
@@ -103,30 +108,31 @@ function AuthenticatedRoutes() {
     <Routes>
       <Route path={ROUTES.login} element={<LoginPage />} />
       <Route path={ROUTES.register} element={<RegisterPage />} />
+      {/* 公开首页不应被 AppShell 的工作台导航包裹。 */}
+      <Route path={ROUTES.home} element={<HomeRoute />} />
       <Route element={<AppShell />}>
-        <Route path={ROUTES.home} element={<StudioHomePage />} />
         <Route path={ROUTES.studioImage} element={<ImageCreationPage />} />
         <Route path={ROUTES.studioEdit} element={<TemplateImageEditPage />} />
         <Route path={ROUTES.studioVideo} element={<VideoCreationPage />} />
         <Route path={ROUTES.works} element={<WorksPage />} />
         <Route path={`${ROUTES.works}/:workId`} element={<WorkDetailPage />} />
-        <Route path={ROUTES.wallet} element={<PaymentPage />} />
+        <Route path={ROUTES.wallet} element={<PaymentReturnRoute />} />
+        <Route path={ROUTES.paymentResult} element={<PaymentResultPage />} />
+        <Route path="/wallet/recharge" element={<PaymentReturnRoute />} />
+        <Route path="/recharge" element={<PaymentReturnRoute legacy />} />
+        <Route path="/payment" element={<PaymentReturnRoute legacy />} />
         <Route path={ROUTES.account} element={<AccountPage />} />
         <Route path={ROUTES.settings} element={<AccountPage />} />
         <Route path={ROUTES.feedback} element={<FeedbackRoute />} />
         <Route path={ROUTES.notifications} element={<NotificationsPage />} />
       </Route>
-      {Object.keys(LEGACY_ROUTE_REDIRECTS).map((pathname) => (
+      {Object.keys(LEGACY_ROUTE_REDIRECTS).filter((pathname) => pathname !== '/recharge').map((pathname) => (
         <Route
           key={pathname}
           path={pathname}
           element={<LegacyRouteNavigate pathname={pathname} />}
         />
       ))}
-      <Route
-        path="/payment"
-        element={<Navigate to={ROUTES.wallet} replace />}
-      />
       <Route path="*" element={<Navigate to={ROUTES.home} replace />} />
     </Routes>
   );

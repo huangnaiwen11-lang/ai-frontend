@@ -12,6 +12,7 @@ export const ROUTES = {
   studioVideo: "/studio/video",
   works: "/works",
   wallet: "/wallet",
+  paymentResult: "/payment/result",
   account: "/me",
   settings: "/settings",
   faq: "/faq",
@@ -47,6 +48,15 @@ const discardSearchRedirect = (
 export const LEGACY_ROUTE_REDIRECTS: Readonly<
   Partial<Record<string, LegacyRouteRedirect>>
 > = {
+  "/video": discardSearchRedirect(ROUTES.studioVideo),
+  // 旧 /image 挂载 ImageModesPage（模板库），不是 /create/image 的文生图表单。
+  "/image": discardSearchRedirect(ROUTES.studioEdit),
+  "/faceswap": discardSearchRedirect(ROUTES.studioEdit),
+  "/create/faceswap": discardSearchRedirect(ROUTES.studioEdit),
+  "/create/undress": discardSearchRedirect(ROUTES.studioEdit),
+  "/dress-up": discardSearchRedirect(ROUTES.studioImage),
+  "/legal/privacy": discardSearchRedirect(ROUTES.privacy),
+  "/legal/terms": discardSearchRedirect(ROUTES.terms),
   "/create/image": discardSearchRedirect(ROUTES.studioImage),
   "/image-generator": discardSearchRedirect(ROUTES.studioImage),
 

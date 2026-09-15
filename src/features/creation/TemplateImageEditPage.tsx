@@ -10,6 +10,7 @@ import { CreationError } from './CreationError'
 import { TemplatePicker } from '../templates/TemplatePicker'
 import { CreationImageInput } from './CreationImageInput'
 import { CreationResult } from './CreationResult'
+import { TemplateCreationDialog } from './TemplateCreationDialog'
 
 /**
  * 模板图片编辑只呈现 Go 目录返回的展示字段。用户选择模板与个人图片，
@@ -21,9 +22,11 @@ export function TemplateImageEditPage() {
   const mediaApi = useMemo(() => new MediaApi(client), [client])
   const [templates, setTemplates] = useState<ImageTemplate[]>([])
   const [templateID, setTemplateID] = useState('')
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [prompt, setPrompt] = useState('')
   const [creationID, setCreationID] = useState<string | null>(null)
+  const [submittedTemplateID, setSubmittedTemplateID] = useState<string | null>(null)
   const [error, setError] = useState<GoApiError | Error | null>(null)
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(true)
   const submission = useCreationSubmission()
@@ -47,6 +50,8 @@ export function TemplateImageEditPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!templateID || !file) return
+    // 任务反馈绑定提交时的模板，后续浏览其它模板不能改变结果归属。
+    setSubmittedTemplateID(templateID)
     setCreationID(null)
     setError(null)
     await submission.submit(async (isCurrent) => {
@@ -57,24 +62,35 @@ export function TemplateImageEditPage() {
     }, (result) => setCreationID(result.imageId))
   }
 
+  const selectedTemplate = templates.find((item) => item.id === templateID)
+  const feedbackMatchesSelection = !submittedTemplateID || submittedTemplateID === templateID
+  const feedback = <>
+    {error || submission.error ? <CreationError error={error ?? submission.error!} /> : null}
+    {status.phase === 'polling' ? <p>正在生成</p> : null}
+    {status.phase === 'completed' ? <CreationResult kind="image" url={status.image.imageUrl} /> : null}
+    {status.phase === 'moderated' ? <p role="status">内容审核未通过，钻石不予退还。</p> : null}
+    {status.phase === 'failed' ? <p role="alert">{status.error.message}</p> : null}
+  </>
+
   return (
     <main>
       <h1>模板图片编辑</h1>
-      <form onSubmit={handleSubmit}>
-        <TemplatePicker label="选择模板" items={templates} value={templateID} onChange={setTemplateID}
-          loading={isLoadingTemplates} disabled={submission.isSubmitting} failed={Boolean(error)} />
-        <CreationImageInput label="上传人物图片" file={file} onChange={setFile} disabled={submission.isSubmitting} required />
-        <label>
-          补充描述（可选）
-          <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} disabled={submission.isSubmitting} />
-        </label>
-        <button type="submit" disabled={submission.isSubmitting || isLoadingTemplates || !templateID || !file}>开始生成</button>
-      </form>
-      {error || submission.error ? <CreationError error={error ?? submission.error!} /> : null}
-      {status.phase === 'polling' ? <p>正在生成</p> : null}
-      {status.phase === 'completed' ? <CreationResult kind="image" url={status.image.imageUrl} /> : null}
-      {status.phase === 'moderated' ? <p role="status">内容审核未通过，钻石不予退还。</p> : null}
-      {status.phase === 'failed' ? <p role="alert">{status.error.message}</p> : null}
+      <TemplatePicker label="选择模板" items={templates} value={templateID} onChange={(id) => { setTemplateID(id); setSheetOpen(Boolean(id)) }}
+        loading={isLoadingTemplates} disabled={submission.isSubmitting} failed={Boolean(error)} />
+      {selectedTemplate ? <>
+        <button className="template-creation__resume" type="button" onClick={() => setSheetOpen(true)}>继续编辑</button>
+        <TemplateCreationDialog title={selectedTemplate.title} coverUrl={selectedTemplate.coverUrl} open={sheetOpen}
+          videoUrl={selectedTemplate.videoUrl} previewVideoUrl={selectedTemplate.previewVideoUrl}
+          onClose={() => setSheetOpen(false)} onSubmit={handleSubmit} status={feedbackMatchesSelection ? feedback : null}
+          disabled={submission.isSubmitting || isLoadingTemplates || !file}>
+          <CreationImageInput label="上传人物图片" file={file} onChange={setFile} disabled={submission.isSubmitting} required />
+          <label>
+            补充描述（可选）
+            <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} disabled={submission.isSubmitting} />
+          </label>
+        </TemplateCreationDialog>
+      </> : null}
+      {!sheetOpen || !selectedTemplate || !feedbackMatchesSelection ? feedback : null}
     </main>
   )
 }

@@ -1,19 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
-import { PaymentApi, type CheckoutResult } from '../../api/payments'
+import { CheckoutPanel } from './CheckoutPanel'
 import { WalletApi, type WalletLedgerEntry, type WalletSummary } from '../../api/wallet'
 import { isGoApiError } from '../../api/http'
 import { useGoApiClient } from '../../app/GoApiProvider'
 
-const LOCAL_PRODUCT_ID = 'coins_100'
 const LEDGER_PAGE_SIZE = 20
 
 export function PaymentPage() {
   const client = useGoApiClient()
-  const paymentApi = useMemo(() => new PaymentApi(client), [client])
   const walletApi = useMemo(() => new WalletApi(client), [client])
-  const [checkout, setCheckout] = useState<CheckoutResult | null>(null)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [summary, setSummary] = useState<WalletSummary | null>(null)
   const [entries, setEntries] = useState<WalletLedgerEntry[]>([])
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -63,24 +58,13 @@ export function PaymentPage() {
     }
   }
 
-  async function createCheckout() {
-    setErrorMessage(null)
-    setIsSubmitting(true)
-    try {
-      setCheckout(await paymentApi.createCheckout({ productId: LOCAL_PRODUCT_ID }))
-    } catch (error) {
-      setErrorMessage(isGoApiError(error) ? error.message : '创建充值订单失败')
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   return (
-    <main>
+    <main className="payment-page">
       <h1>我的钱包</h1>
       {isLoadingWallet ? <p role="status">正在读取钱包信息…</p> : null}
       {walletError ? <p role="alert">{walletError}</p> : null}
       {summary ? <WalletSummaryView summary={summary} /> : null}
+      <CheckoutPanel />
       {!isLoadingWallet && !walletError && entries.length === 0 ? <p>暂无账本记录</p> : null}
       {entries.length > 0 ? <WalletLedgerView entries={entries} /> : null}
       {nextCursor ? (
@@ -89,16 +73,6 @@ export function PaymentPage() {
         </button>
       ) : null}
 
-      <h2>充值</h2>
-      <p>商品：{LOCAL_PRODUCT_ID}</p>
-      <button type="button" disabled={isSubmitting} onClick={() => void createCheckout()}>
-        创建充值订单
-      </button>
-      {errorMessage ? <p role="alert">{errorMessage}</p> : null}
-      {checkout?.integrationMode === 'local_only' ? <p>本地联调收银台</p> : null}
-      {checkout?.integrationMode === 'paycores' && checkout.checkoutUrl ? (
-        <a href={checkout.checkoutUrl}>前往 PayCores 收银台</a>
-      ) : null}
     </main>
   )
 }

@@ -9,6 +9,7 @@ import { CreationError } from './CreationError'
 import { TemplatePicker } from '../templates/TemplatePicker'
 import { CreationImageInput } from './CreationImageInput'
 import { CreationResult } from './CreationResult'
+import { TemplateCreationDialog } from './TemplateCreationDialog'
 
 const VIDEO_DURATIONS = [5, 10, 15] as const
 const VIDEO_PRICES: Record<(typeof VIDEO_DURATIONS)[number], number> = { 5: 50, 10: 100, 15: 150 }
@@ -20,10 +21,12 @@ export function VideoCreationPage() {
   const mediaApi = useMemo(() => new MediaApi(client), [client])
   const [templates, setTemplates] = useState<VideoTemplate[]>([])
   const [templateID, setTemplateID] = useState('')
+  const [sheetOpen, setSheetOpen] = useState(false)
   const [file, setFile] = useState<File | null>(null)
   const [prompt, setPrompt] = useState('')
   const [durationSeconds, setDurationSeconds] = useState<(typeof VIDEO_DURATIONS)[number]>(5)
   const [taskID, setTaskID] = useState<string | null>(null)
+  const [submittedTemplateID, setSubmittedTemplateID] = useState<string | null>(null)
   const [error, setError] = useState<GoApiError | Error | null>(null)
   const [loading, setLoading] = useState(true)
   const submission = useCreationSubmission()
@@ -44,6 +47,8 @@ export function VideoCreationPage() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!templateID || (!file && !prompt.trim())) return
+    // 展示层切换模板不改变已有任务归属，也不取消原任务轮询。
+    setSubmittedTemplateID(templateID)
     setTaskID(null)
     setError(null)
     await submission.submit(async (isCurrent) => {
@@ -55,26 +60,37 @@ export function VideoCreationPage() {
     }, (result) => setTaskID(result.taskId))
   }
 
-  return <main>
-    <h1>视频创作</h1>
-    <form onSubmit={handleSubmit}>
-      <TemplatePicker label="选择视频模板" items={templates} value={templateID} onChange={setTemplateID}
-        loading={loading} disabled={submission.isSubmitting} failed={Boolean(error)} />
-      <CreationImageInput label="上传首帧图片（可选）" file={file} onChange={setFile} disabled={submission.isSubmitting} />
-      <label>首帧描述（可选）
-        <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} disabled={submission.isSubmitting} />
-      </label>
-      <label>视频时长
-        <select value={durationSeconds} onChange={(event) => setDurationSeconds(Number(event.target.value) as (typeof VIDEO_DURATIONS)[number])} disabled={submission.isSubmitting}>
-          {VIDEO_DURATIONS.map((duration) => <option key={duration} value={duration}>{duration} 秒（{VIDEO_PRICES[duration]} 钻）</option>)}
-        </select>
-      </label>
-      <button type="submit" disabled={loading || submission.isSubmitting || !templateID || (!file && !prompt.trim())}>开始生成</button>
-    </form>
+  const selectedTemplate = templates.find((item) => item.id === templateID)
+  const feedbackMatchesSelection = !submittedTemplateID || submittedTemplateID === templateID
+  const feedback = <>
     {error || submission.error ? <CreationError error={error ?? submission.error!} /> : null}
     {status.phase === 'polling' ? <p>正在生成</p> : null}
     {status.phase === 'completed' ? <CreationResult kind="video" url={status.video.videoUrl} /> : null}
     {status.phase === 'moderated' ? <p role="status">内容审核未通过，钻石不予退还。</p> : null}
     {status.phase === 'failed' ? <p role="alert">{status.message}</p> : null}
+  </>
+
+  return <main>
+    <h1>视频创作</h1>
+    <TemplatePicker label="选择视频模板" items={templates} value={templateID} onChange={(id) => { setTemplateID(id); setSheetOpen(Boolean(id)) }}
+      loading={loading} disabled={submission.isSubmitting} failed={Boolean(error)} />
+    {selectedTemplate ? <>
+      <button className="template-creation__resume" type="button" onClick={() => setSheetOpen(true)}>继续编辑</button>
+      <TemplateCreationDialog title={selectedTemplate.title} coverUrl={selectedTemplate.coverUrl} open={sheetOpen}
+        videoUrl={selectedTemplate.videoUrl} previewVideoUrl={selectedTemplate.previewVideoUrl}
+        onClose={() => setSheetOpen(false)} onSubmit={handleSubmit} status={feedbackMatchesSelection ? feedback : null}
+        disabled={loading || submission.isSubmitting || (!file && !prompt.trim())}>
+        <CreationImageInput label="上传首帧图片（可选）" file={file} onChange={setFile} disabled={submission.isSubmitting} />
+        <label>首帧描述（可选）
+          <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} disabled={submission.isSubmitting} />
+        </label>
+        <label>视频时长
+          <select value={durationSeconds} onChange={(event) => setDurationSeconds(Number(event.target.value) as (typeof VIDEO_DURATIONS)[number])} disabled={submission.isSubmitting}>
+            {VIDEO_DURATIONS.map((duration) => <option key={duration} value={duration}>{duration} 秒（{VIDEO_PRICES[duration]} 钻）</option>)}
+          </select>
+        </label>
+      </TemplateCreationDialog>
+    </> : null}
+    {!sheetOpen || !selectedTemplate || !feedbackMatchesSelection ? feedback : null}
   </main>
 }

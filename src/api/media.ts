@@ -1,10 +1,18 @@
 import type { GoApiClient } from './http'
 import { createGoApiError } from './errors'
 
-export type ImageTemplate = {
+/** 公开展示字段白名单；技术配方与结算事实不能混入目录投影。 */
+export type TemplatePresentation = {
+  coverUrl?: string
+  videoUrl?: string
+  previewVideoUrl?: string
+  tag?: string
+  badge?: 'new' | 'trending' | 'hot'
+}
+
+export type ImageTemplate = TemplatePresentation & {
   id: string
   title: string
-  coverUrl?: string
   type: 'image'
   contentRating: 'sfw' | 'nsfw'
 }
@@ -17,10 +25,9 @@ export type UploadedImage = {
   downloadUrl: string
 }
 
-export type VideoTemplate = {
+export type VideoTemplate = TemplatePresentation & {
   id: string
   title: string
-  coverUrl?: string
   type: 'video'
   contentRating: 'sfw' | 'nsfw'
 }
@@ -60,8 +67,17 @@ function normalizeTemplates<T extends ImageTemplate | VideoTemplate>(value: unkn
   const items = value.items.map((raw) => {
     if (!isRecord(raw) || typeof raw.id !== 'string' || !raw.id.trim() || typeof raw.title !== 'string' || !raw.title.trim() || raw.type !== kind || (raw.contentRating !== 'sfw' && raw.contentRating !== 'nsfw') || (raw.coverUrl !== undefined && typeof raw.coverUrl !== 'string') || seen.has(raw.id)) return invalidResponse()
     seen.add(raw.id)
-    const base = { id: raw.id, title: raw.title, type: kind, contentRating: raw.contentRating }
-    return typeof raw.coverUrl === 'string' ? { ...base, coverUrl: raw.coverUrl } : base
+    const presentation: TemplatePresentation = {}
+    for (const field of ['coverUrl', 'videoUrl', 'previewVideoUrl', 'tag'] as const) {
+      if (raw[field] === undefined) continue
+      if (typeof raw[field] !== 'string') return invalidResponse()
+      presentation[field] = raw[field]
+    }
+    if (raw.badge !== undefined) {
+      if (raw.badge !== 'new' && raw.badge !== 'trending' && raw.badge !== 'hot') return invalidResponse()
+      presentation.badge = raw.badge
+    }
+    return { id: raw.id, title: raw.title, type: kind, contentRating: raw.contentRating, ...presentation }
   })
   return { items: items as T[], total: value.total as number }
 }

@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { PaymentApi } from '../../api/payments'
 import { GoApiClient } from '../../api/http'
 import { GoApiProvider } from '../../app/GoApiProvider'
 import { PaymentPage } from './PaymentPage'
@@ -9,7 +10,14 @@ const goBaseUrl = 'http://127.0.0.1:18000'
 const sessionStore = { getToken: () => 'go-session-token' }
 
 describe('受控支付入口', () => {
+  // 商品客户端及完整下单交互由 checkout.test.tsx 覆盖；本文件聚焦钱包和账本合同。
+  beforeEach(() => {
+    vi.spyOn(PaymentApi.prototype, 'listProducts').mockResolvedValue({ products: [
+      { id: 'coins_100', version: 1, label: '100 钻石', diamondAmount: 100, amountCents: 299, currency: 'USD' },
+    ] })
+  })
   afterEach(() => {
+    vi.restoreAllMocks()
     vi.unstubAllGlobals()
   })
 
@@ -25,7 +33,7 @@ describe('受控支付入口', () => {
     const user = userEvent.setup()
 
     renderPaymentPage()
-    await user.click(screen.getByRole('button', { name: '创建充值订单' }))
+    await user.click(await screen.findByRole('button', { name: '创建充值订单' }))
 
     const [url, init] = fetchMock.mock.calls[2] as [string, RequestInit]
     expect(url).toBe(`${goBaseUrl}/api/wallet/create-external-checkout`)

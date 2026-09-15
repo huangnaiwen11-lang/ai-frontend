@@ -1,7 +1,11 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
+import { Eye } from 'lucide-react'
+import { TemplatePreviewDialog } from './TemplatePreviewDialog'
+import { hasTemplateMedia, resolveTemplateCover } from './template-media'
+import type { TemplatePresentation } from '../../api/media'
 import './template-picker.css'
 
-type TemplateChoice = { id: string; title: string; coverUrl?: string }
+type TemplateChoice = TemplatePresentation & { id: string; title: string }
 type TemplatePickerProps = {
   label: string
   items: TemplateChoice[]
@@ -18,6 +22,13 @@ type TemplatePickerProps = {
  */
 export function TemplatePicker({ label, items, value, loading, disabled, failed, onChange }: TemplatePickerProps) {
   const groupName = useId()
+  const [previewID, setPreviewID] = useState<string | null>(null)
+  const preview = !loading && !disabled && !failed ? items.find((item) => item.id === previewID) : undefined
+  const previewAvailable = preview ? hasTemplateMedia(preview) : false
+  useEffect(() => {
+    // 目录或内容权限更新后立即撤下旧预览；恢复目录不应自动重开。
+    if (!preview || !previewAvailable) setPreviewID(null)
+  }, [preview, previewAvailable])
   return (
     <section className="template-picker" aria-label={`${label}目录`} aria-busy={loading}>
       <label className="template-picker__select">
@@ -31,23 +42,31 @@ export function TemplatePicker({ label, items, value, loading, disabled, failed,
       {!loading && !failed && items.length === 0 ? <p role="status">暂无可用模板</p> : null}
       <div className="template-picker__grid">
         {items.map((item) => (
-          <label className="template-picker__card" key={item.id}>
-            <input type="radio" name={groupName} value={item.id} checked={value === item.id}
-              disabled={disabled || loading} aria-label={item.title} onChange={() => onChange(item.id)} />
-            <TemplateCover key={`${item.id}:${item.coverUrl ?? ''}`} item={item} />
-            <span className="template-picker__title">{item.title}</span>
-          </label>
+          <div className="template-picker__card" key={item.id}>
+            <label className="template-picker__choice">
+              <input type="radio" name={groupName} value={item.id} checked={value === item.id}
+                disabled={disabled || loading} aria-label={item.title} onChange={() => onChange(item.id)}
+                onClick={() => { if (value === item.id) onChange(item.id) }} />
+              <TemplateCover key={`${item.id}:${item.coverUrl ?? ''}`} item={item} />
+              <span className="template-picker__title">{item.title}</span>
+            </label>
+            <button type="button" className="template-picker__preview" aria-label={`预览${item.title}`} title="预览模板"
+              disabled={disabled || loading || failed || !hasTemplateMedia(item)} onClick={() => setPreviewID(item.id)}>
+              <Eye size={18} aria-hidden="true" />
+            </button>
+          </div>
         ))}
       </div>
+      {preview && previewAvailable ? <TemplatePreviewDialog key={preview.id} title={preview.title} coverUrl={preview.coverUrl}
+        videoUrl={preview.videoUrl} previewVideoUrl={preview.previewVideoUrl}
+        onClose={() => setPreviewID(null)} onSelect={() => { onChange(preview.id); setPreviewID(null) }} /> : null}
     </section>
   )
 }
 
 function TemplateCover({ item }: { item: TemplateChoice }) {
   const [failed, setFailed] = useState(false)
-  // 上一轮把公共文件迁入 legacy，但本地 Go 测试目录仍使用旧站根路径。
-  // 这里只修正已核实的同一文件地址；绝不改写任意 CDN URL 或用图标替代模板封面。
-  const url = item.coverUrl === '/cling-ai-icon.png' ? '/legacy/cling-ai-icon.png' : item.coverUrl
+  const url = resolveTemplateCover(item.coverUrl)
   if (!url || failed) return <span className="template-picker__missing">暂无封面</span>
   return <img src={url} alt={item.title} loading="lazy" decoding="async" onError={() => setFailed(true)} />
 }

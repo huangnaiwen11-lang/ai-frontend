@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 import { ROUTES } from './routes'
@@ -13,9 +14,45 @@ const PUBLIC_PAGE_CASES = [
 let navigatorLanguageDescriptor: PropertyDescriptor | undefined
 
 describe('App', () => {
+  it.each(['/payment/result', '/recharge', '/payment', '/wallet'])('支付回跳 %s 只保留单个订单编号并查询 Go', async (path) => {
+    window.history.pushState({}, '', `${path}?orderId=order-1&status=success&price=1`)
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ orderId: 'order-1', productId: 'coins_100', status: 'pending', provider: 'paycores', amountCents: 299, currency: 'USD', credits: 100, paymentReceived: false, backendReady: false }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+    expect(await screen.findByText('等待付款确认')).toBeInTheDocument()
+    expect(fetchMock.mock.calls.every(([url, options]) => url.endsWith('/api/payments/order-status/order-1') && options.method === 'GET')).toBe(true)
+    expect(screen.queryByText('支付成功，钻石已到账')).not.toBeInTheDocument()
+  })
+  it.each([
+    ['/video', '视频创作', ROUTES.studioVideo],
+    ['/image', '模板图片编辑', ROUTES.studioEdit],
+    ['/faceswap', '模板图片编辑', ROUTES.studioEdit],
+  ])('旧主导航 %s 进入对应创作目录，不自动生成', async (path, title, target) => {
+    window.history.pushState({}, '', `${path}?autoSubmit=true`)
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ items: [], total: 0 }))
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: title })).toBeInTheDocument()
+    expect(window.location.pathname).toBe(target)
+    expect(window.location.search).toBe('')
+    expect(fetchMock.mock.calls.every(([, options]) => !options?.method || options.method === 'GET')).toBe(true)
+  })
+
+  it.each([['/legal/privacy', 'Privacy Policy'], ['/legal/terms', 'Terms of Service']])('法律别名 %s 不恢复登录、不发请求', async (path, title) => {
+    window.history.pushState({}, '', path)
+    window.sessionStorage.setItem('ai-frontend-service.go-session-token', 'existing-token')
+    setNavigatorLanguage('en-US')
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    render(<App />)
+    expect(await screen.findByRole('heading', { name: title })).toBeInTheDocument()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   beforeEach(() => {
     navigatorLanguageDescriptor = Object.getOwnPropertyDescriptor(window.navigator, 'language')
     window.sessionStorage.clear()
+    window.localStorage.clear()
     vi.stubEnv('VITE_GO_API_BASE_URL', 'http://127.0.0.1:18000')
   })
 
@@ -44,20 +81,32 @@ describe('App', () => {
     },
   )
 
-  it('在应用壳内提供规范工作室首页与导航', () => {
+  it('未确认年龄时首页只显示年龄确认，不挂载成人内容或应用壳', async () => {
     window.history.pushState({}, '', '/')
 
     render(<App />)
 
-    expect(screen.getByRole('heading', { name: 'Cling AI 工作室' })).toBeInTheDocument()
-    expect(screen.getByText('新前端仅通过 Go API Gateway 提供创作能力。')).toBeInTheDocument()
-    expect(screen.getByRole('navigation', { name: '主导航' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '图片创作' })).toHaveAttribute('href', ROUTES.studioImage)
-    expect(screen.getByRole('link', { name: '模板编辑' })).toHaveAttribute('href', ROUTES.studioEdit)
-    expect(screen.getByRole('link', { name: '视频创作' })).toHaveAttribute('href', ROUTES.studioVideo)
-    expect(screen.getByRole('link', { name: '我的作品' })).toHaveAttribute('href', ROUTES.works)
-    expect(screen.getByRole('link', { name: '钱包' })).toHaveAttribute('href', ROUTES.wallet)
+    expect(await screen.findByRole('heading', { name: '年龄确认' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: '用 AI 释放你的创作想象' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('navigation', { name: '主导航' })).not.toBeInTheDocument()
     expect(screen.queryByText('Animate')).not.toBeInTheDocument()
+  })
+
+  it('确认年龄后展示使用原迁移图片的访客首页，所有创作入口仅去登录页', async () => {
+    window.history.pushState({}, '', '/')
+    render(<App />)
+
+    await userEvent.click(await screen.findByRole('button', { name: '我已满 18 岁，进入网站' }))
+
+    expect(screen.getByRole('heading', { name: '用 AI 释放你的创作想象' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: '主视觉：黑色大理石人像' })).toHaveAttribute('src', '/legacy/images/homepage/lux-black-marble-portrait.webp')
+    const createButtons = screen.getAllByRole('button', { name: '免费开始创作' })
+    expect(createButtons).toHaveLength(2)
+    expect(screen.getByRole('link', { name: '隐私政策' })).toHaveAttribute('href', ROUTES.privacy)
+    expect(screen.queryByText('Animate')).not.toBeInTheDocument()
+
+    await userEvent.click(createButtons[0])
+    expect(window.location.pathname).toBe(ROUTES.login)
   })
 
   it('已登录访问首页沿用旧 HomeGate 进入视频入口，不停留在说明页', async () => {
@@ -108,7 +157,7 @@ describe('App', () => {
 
     render(<App />)
 
-    expect(await screen.findByRole('heading', { name: '充值' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: '钻石充值' })).toBeInTheDocument()
     expect(window.location.pathname).toBe(ROUTES.wallet)
     expect(window.location.search).toBe('')
   })

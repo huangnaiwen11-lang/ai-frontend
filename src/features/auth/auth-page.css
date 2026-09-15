@@ -1,0 +1,95 @@
+/* 样式限定在认证页内，全幅图片与独立滚动高度兼容小屏键盘和浏览器安全区。 */
+.auth-page {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: #101014;
+  color: #fff;
+  font-family: Livvic, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  letter-spacing: 0;
+}
+.auth-page__background {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+.auth-page::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: rgb(8 8 12 / 38%);
+}
+.auth-page__header {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  gap: 12px;
+  padding: calc(env(safe-area-inset-top) + 16px) 20px 16px;
+}
+.auth-page .auth-page__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 50%;
+  color: #fff;
+  background: rgb(10 10 15 / 70%);
+}
+.auth-page__brand { justify-self: center; font-size: 28px; line-height: 1; font-weight: 800; }
+.auth-page__brand > span { color: var(--brand-light, #fb923c); }
+.auth-page__body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100dvh - 76px - env(safe-area-inset-top));
+  padding: 24px 20px calc(40px + env(safe-area-inset-bottom));
+}
+.auth-page__panel {
+  width: min(100%, 430px);
+  min-width: 0;
+  padding: 28px;
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 8px;
+  background: rgb(10 10 15 / 88%);
+}
+.auth-page__panel h1 { margin: 0 0 24px; font-size: 30px; line-height: 1.25; text-align: center; }
+.auth-page__form { display: grid; gap: 18px; }
+.auth-page__form > label:not(.auth-page__age) { display: grid; gap: 8px; font-size: 14px; color: #e6e6eb; }
+.auth-page__form input:not([type='checkbox']) {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 11px 12px;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 8%);
+  color: #fff;
+  font-size: 16px;
+}
+.auth-page :is(a, input, button):focus-visible { outline: 2px solid var(--brand-light, #fb923c); outline-offset: 3px; }
+.auth-page__age { display: flex; align-items: flex-start; gap: 10px; line-height: 1.5; font-size: 14px; color: #e6e6eb; cursor: pointer; }
+.auth-page__age input { flex: 0 0 20px; width: 20px; height: 20px; margin: 1px 0 0; accent-color: var(--brand-light, #fb923c); }
+.auth-page__submit { min-height: 48px; width: 100%; border: 0; border-radius: 8px; background: #fff; color: #121216; font-weight: 700; cursor: pointer; }
+.auth-page__submit:hover:not(:disabled) { background: #e7e7ec; }
+.auth-page__submit:disabled { opacity: .5; cursor: not-allowed; }
+.auth-page__error { margin: 0; color: #ffc1c8; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.auth-page__switch { margin: 22px 0; text-align: center; font-size: 14px; line-height: 1.6; }
+.auth-page .auth-page__switch a { margin-left: 6px; }
+.auth-page__legal { padding-top: 18px; border-top: 1px solid rgb(255 255 255 / 15%); font-size: 12px; color: #bdbdc8; line-height: 1.8; text-align: center; }
+.auth-page .auth-page__legal a { color: #eeeef2; text-underline-offset: 3px; margin: 0 4px; }
+@media (max-width: 480px) {
+  .auth-page__body { align-items: flex-end; padding: 32px 16px calc(20px + env(safe-area-inset-bottom)); }
+  .auth-page__panel { padding: 24px 20px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .auth-page__submit, .auth-page__close { transition: background-color 120ms ease; }
+}
