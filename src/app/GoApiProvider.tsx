@@ -18,3 +18,8 @@ export function useGoApiClient(): GoApiClient {
   }
   return client
 }
+
+/** 仅用于可选增强能力；基础资料展示不能因测试或嵌入场景缺少 Provider 而崩溃。 */
+export function useOptionalGoApiClient(): GoApiClient | null {
+  return useContext(GoApiContext)
+}

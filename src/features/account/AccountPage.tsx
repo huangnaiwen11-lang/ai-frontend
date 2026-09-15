@@ -1,7 +1,9 @@
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import type { RuntimeAuthUser } from "../../api/auth";
 import { ROUTES } from "../../app/routes";
+import { useOptionalGoApiClient } from "../../app/GoApiProvider";
+import { MediaApi } from "../../api/media";
 import { type SessionRestoreState, useAuth } from "../auth/AuthProvider";
 
 /** Go 会话投影是身份与权限的唯一事实来源，页面只负责展示。 */
@@ -74,12 +76,16 @@ export function AccountPage() {
     deleteAccount,
     changePassword,
   } = useAuth();
+  const client = useOptionalGoApiClient();
+  const mediaApi = useMemo(() => (client ? new MediaApi(client) : null), [client]);
   const [provider, setProvider] = useState("email");
   const [credential, setCredential] = useState("");
   const [binding, setBinding] = useState(false);
   const [bindingError, setBindingError] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState(user?.bio ?? "");
+  const [avatarImageId, setAvatarImageId] = useState(user?.avatarImageId ?? "");
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [revokingSessions, setRevokingSessions] = useState(false);
@@ -154,13 +160,14 @@ export function AccountPage() {
     <main>
       <h1>用户中心</h1>
       <p>昵称：{user.displayName || "未设置昵称"}</p>
+	  <label>头像图片<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" disabled={!mediaApi || avatarUploading || profileSaving} onChange={async (event) => { const file = event.target.files?.[0]; if (!file || !mediaApi) return; setProfileError(null); setAvatarUploading(true); try { setAvatarImageId((await mediaApi.uploadImage(file)).id); } catch (error) { setProfileError(error instanceof Error ? error.message : "头像上传失败，请稍后重试"); } finally { setAvatarUploading(false); } }} />{avatarUploading ? "上传中…" : avatarImageId ? "头像已上传，保存资料后生效" : ""}</label>
       <form
         onSubmit={async (event) => {
           event.preventDefault();
           setProfileError(null);
           setProfileSaving(true);
           try {
-            await updateProfile(displayName, bio);
+            await updateProfile(displayName, bio, avatarImageId || undefined);
             setDisplayName("");
           } catch (error) {
             setProfileError(
@@ -189,7 +196,7 @@ export function AccountPage() {
             disabled={profileSaving}
           />
         </label>
-        {/* 资料提交只调用 Go 的昵称合同，不能从表单扩展到安全或结算字段。 */}
+        {/* 资料提交仅包含 Go 合同允许的头像 ID、昵称和简介，不能扩展到安全或结算字段。 */}
         <button type="submit" disabled={profileSaving || !displayName.trim()}>
           {profileSaving ? "保存中…" : "保存昵称"}
         </button>

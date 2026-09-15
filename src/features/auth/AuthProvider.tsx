@@ -28,7 +28,7 @@ type AuthContextValue = {
   register(input: RegisterInput): Promise<void>;
   bindGuest(input: GuestBindingInput): Promise<void>;
   updateDisplayName(displayName: string): Promise<void>;
-  updateProfile(displayName: string, bio: string): Promise<void>;
+  updateProfile(displayName: string, bio: string, avatarImageId?: string): Promise<void>;
   revokeAllSessions(): Promise<void>;
   deleteAccount(): Promise<void>;
   changePassword(currentPassword: string, newPassword: string): Promise<void>;
@@ -149,8 +149,8 @@ export function AuthProvider({
         await authApi.updateDisplayName(displayName);
         await restoreCurrentUser(true);
       },
-      updateProfile: async (displayName, bio) => {
-        await authApi.updateProfile(displayName, bio);
+      updateProfile: async (displayName, bio, avatarImageId) => {
+        await authApi.updateProfile(displayName, bio, avatarImageId);
         await restoreCurrentUser(true);
       },
       revokeAllSessions: async () => {

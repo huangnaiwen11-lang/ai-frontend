@@ -9,6 +9,7 @@ export type AuthUser = {
   displayName: string;
   // 旧版 Go 投影尚未包含该字段时安全降级为空资料，不阻断会话恢复。
   bio?: string;
+  avatarImageId?: string;
   bindingState: "guest" | "bound";
   accountStatus: "normal" | "banned" | "deleted";
   contentAccess: ContentAccess;
@@ -76,8 +77,8 @@ export class AuthApi {
   }
 
   /** 资料页一次性保存昵称与简介；两者均由 Go 服务端再次限长校验。 */
-  public updateProfile(displayName: string, bio: string): Promise<{ user: AuthUser }> {
-    return this.client.patch("/api/auth/me/profile", { displayName, bio });
+  public updateProfile(displayName: string, bio: string, avatarImageId?: string): Promise<{ user: AuthUser }> {
+    return this.client.patch("/api/auth/me/profile", { displayName, bio, ...(avatarImageId === undefined ? {} : { avatarImageId }) });
   }
 
   /** 撤销用户全部 Go 会话，服务端会立即拒绝其他设备的旧会话。 */
@@ -126,6 +127,7 @@ function isRuntimeAuthUserProjection(value: unknown): value is RuntimeAuthUser {
     typeof user.id === "string" &&
     typeof user.displayName === "string" &&
     (user.bio === undefined || typeof user.bio === "string") &&
+    (user.avatarImageId === undefined || typeof user.avatarImageId === "string") &&
     typeof user.bindingState === "string" &&
     typeof user.accountStatus === "string" &&
     typeof user.contentAccess === "string" &&
