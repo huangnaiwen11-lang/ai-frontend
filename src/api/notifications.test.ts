@@ -43,6 +43,24 @@ describe('NotificationsApi', () => {
     expect(init.method).toBe('DELETE')
     expect(url).not.toMatch(/userId|all=|node|wallet/i)
   })
+
+  it('通知偏好只读写 Go 当前会话路径，保存完整三项快照', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ pushEnabled: true, emailEnabled: true, generationCompletedEnabled: true }))
+      .mockResolvedValueOnce(jsonResponse({ pushEnabled: false, emailEnabled: true, generationCompletedEnabled: false }))
+    vi.stubGlobal('fetch', fetchMock)
+    const api = new NotificationsApi(new GoApiClient({ baseUrl, sessionStore }))
+
+    await api.getPreferences()
+    await api.savePreferences({ pushEnabled: false, emailEnabled: true, generationCompletedEnabled: false })
+
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${baseUrl}/api/notifications/preferences`)
+    const [url, init] = fetchMock.mock.calls[1] as [string, RequestInit]
+    expect(url).toBe(`${baseUrl}/api/notifications/preferences`)
+    expect(init.method).toBe('PATCH')
+    expect(init.body).toBe(JSON.stringify({ pushEnabled: false, emailEnabled: true, generationCompletedEnabled: false }))
+    expect(url).not.toMatch(/userId|node|wallet|diamond/i)
+  })
 })
 
 function jsonResponse(data: unknown): Response {

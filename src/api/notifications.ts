@@ -14,6 +14,13 @@ export type NotificationItem = {
 
 export type NotificationPage = { items: NotificationItem[]; unreadCount: number }
 
+/** 仅保留 AI 工作室的投递偏好，不含旧站社交消息或第三方订阅信息。 */
+export type NotificationPreferences = {
+  pushEnabled: boolean
+  emailEnabled: boolean
+  generationCompletedEnabled: boolean
+}
+
 /** 通知 API 只封装 Go 合同，页面不得自行拼接用户 ID 或旧 Node 地址。 */
 export class NotificationsApi {
   public constructor(private readonly client: GoApiClient) {}
@@ -40,7 +47,17 @@ export class NotificationsApi {
 
   /** 只清除当前会话下已读记录；服务端固定删除条件，前端不传筛选范围。 */
   public clearRead(): Promise<{ deleted: number }> {
-    return this.client.delete('/api/notifications')
+	return this.client.delete('/api/notifications')
+  }
+
+  /** 偏好永远由 Go 当前会话归属，调用方不得传 userId。 */
+  public getPreferences(): Promise<NotificationPreferences> {
+	return this.client.get('/api/notifications/preferences')
+  }
+
+  /** 一次写入完整快照，避免三次独立请求在并发下彼此覆盖。 */
+  public savePreferences(preferences: NotificationPreferences): Promise<NotificationPreferences> {
+	return this.client.patch('/api/notifications/preferences', preferences)
   }
 }
 

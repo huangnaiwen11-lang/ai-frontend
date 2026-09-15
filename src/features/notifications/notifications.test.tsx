@@ -58,6 +58,29 @@ describe('通知中心', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: '暂无通知' })).not.toBeInTheDocument()
   })
+
+  it('读取并保存三项 AI 工作室通知偏好，不携带用户 ID', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse({ items: [], unreadCount: 0 }))
+      .mockResolvedValueOnce(jsonResponse({ pushEnabled: true, emailEnabled: true, generationCompletedEnabled: true }))
+      .mockResolvedValueOnce(jsonResponse({ pushEnabled: false, emailEnabled: true, generationCompletedEnabled: true }))
+    vi.stubGlobal('fetch', fetchMock)
+    const user = userEvent.setup()
+
+    renderPage()
+    await screen.findByRole('heading', { name: '暂无通知' })
+    await user.click(screen.getByRole('button', { name: '通知设置' }))
+    expect(await screen.findByRole('heading', { name: '通知偏好' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('checkbox', { name: '推送通知' }))
+    await user.click(screen.getByRole('button', { name: '保存通知偏好' }))
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3))
+    const [url, init] = fetchMock.mock.calls[2] as [string, RequestInit]
+    expect(url).toBe(`${baseUrl}/api/notifications/preferences`)
+    expect(init.method).toBe('PATCH')
+    expect(init.body).toBe(JSON.stringify({ pushEnabled: false, emailEnabled: true, generationCompletedEnabled: true }))
+    expect(url).not.toMatch(/userId|node|wallet/i)
+  })
 })
 
 function renderPage() {

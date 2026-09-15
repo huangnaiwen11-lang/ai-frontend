@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Bell, CheckCheck, LoaderCircle, Trash2 } from 'lucide-react'
+import { Bell, CheckCheck, LoaderCircle, Settings2, Trash2 } from 'lucide-react'
 import { isGoApiError } from '../../api/http'
-import { NotificationsApi, type NotificationItem } from '../../api/notifications'
+import { NotificationsApi, type NotificationItem, type NotificationPreferences } from '../../api/notifications'
 import { useGoApiClient } from '../../app/GoApiProvider'
 import './notifications.css'
 
@@ -20,6 +20,11 @@ export function NotificationsPage() {
   const [loading, setLoading] = useState(true)
   const [activeAction, setActiveAction] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+	const [preferencesOpen, setPreferencesOpen] = useState(false)
+	const [preferences, setPreferences] = useState<NotificationPreferences | null>(null)
+	const [preferencesLoading, setPreferencesLoading] = useState(false)
+	const [preferencesSaving, setPreferencesSaving] = useState(false)
+	const [preferencesError, setPreferencesError] = useState<string | null>(null)
   const requestGenerationRef = useRef(0)
   const mountedRef = useRef(true)
 
@@ -67,14 +72,65 @@ export function NotificationsPage() {
     if (!activeAction && nextFilter !== filter) setFilter(nextFilter)
   }
 
+	// 设置面板按需读取，避免用户只浏览通知列表时额外请求偏好数据。
+	const togglePreferences = useCallback(async () => {
+		if (preferencesOpen) {
+			setPreferencesOpen(false)
+			return
+		}
+		setPreferencesOpen(true)
+		if (preferences || preferencesLoading) return
+		setPreferencesLoading(true)
+		setPreferencesError(null)
+		try {
+			const loaded = await api.getPreferences()
+			if (mountedRef.current) setPreferences(loaded)
+		} catch (cause) {
+			if (mountedRef.current) setPreferencesError(messageFor(cause, '读取通知偏好失败'))
+		} finally {
+			if (mountedRef.current) setPreferencesLoading(false)
+		}
+	}, [api, preferences, preferencesLoading, preferencesOpen])
+
+	const savePreferences = useCallback(async () => {
+		if (!preferences || preferencesSaving) return
+		setPreferencesSaving(true)
+		setPreferencesError(null)
+		try {
+			const saved = await api.savePreferences(preferences)
+			if (mountedRef.current) setPreferences(saved)
+		} catch (cause) {
+			if (mountedRef.current) setPreferencesError(messageFor(cause, '保存通知偏好失败'))
+		} finally {
+			if (mountedRef.current) setPreferencesSaving(false)
+		}
+	}, [api, preferences, preferencesSaving])
+
+	const setPreference = (key: keyof NotificationPreferences, value: boolean) => {
+		setPreferences((current) => current ? { ...current, [key]: value } : current)
+	}
+
   return <main className="notifications-page" aria-labelledby="notifications-title">
     <header className="notifications-page__header">
       <div><p className="notifications-page__eyebrow"><Bell size={15} /> 通知中心</p><h1 id="notifications-title">通知</h1><span aria-live="polite">未读 {unreadCount} 条</span></div>
       <div className="notifications-page__actions">
+		<button type="button" className="notifications-page__action" aria-expanded={preferencesOpen} disabled={preferencesLoading || preferencesSaving} onClick={() => void togglePreferences()}><Settings2 size={16} />通知设置</button>
         <button type="button" className="notifications-page__action" disabled={Boolean(activeAction) || unreadCount === 0} onClick={() => void runAction('read-all', () => api.markAllRead())}><CheckCheck size={16} />全部标记为已读</button>
         <button type="button" className="notifications-page__action notifications-page__action--danger" disabled={Boolean(activeAction) || !items.some((item) => item.read)} onClick={() => void runAction('clear-read', () => api.clearRead())}><Trash2 size={16} />清除已读</button>
       </div>
     </header>
+
+	{preferencesOpen ? <section className="notifications-page__preferences" aria-labelledby="notification-preferences-title">
+		<div><h2 id="notification-preferences-title">通知偏好</h2><p>仅管理 AI 工作室的生成提醒；这里不会订阅真实推送或发送测试邮件。</p></div>
+		{preferencesLoading ? <p className="notifications-page__status" role="status"><LoaderCircle size={18} />正在读取通知偏好…</p> : null}
+		{preferencesError ? <p className="notifications-page__error" role="alert">{preferencesError}</p> : null}
+		{preferences ? <fieldset disabled={preferencesSaving}>
+			<label><input type="checkbox" aria-label="推送通知" checked={preferences.pushEnabled} onChange={(event) => setPreference('pushEnabled', event.target.checked)} />推送通知<span>在支持推送的客户端提醒你。</span></label>
+			<label><input type="checkbox" aria-label="邮件通知" checked={preferences.emailEnabled} onChange={(event) => setPreference('emailEnabled', event.target.checked)} />邮件通知<span>将重要进度发送至已绑定邮箱。</span></label>
+			<label><input type="checkbox" aria-label="生成完成通知" checked={preferences.generationCompletedEnabled} onChange={(event) => setPreference('generationCompletedEnabled', event.target.checked)} />生成完成通知<span>作品完成后发送站内提醒。</span></label>
+			<button type="button" className="notifications-page__save-preferences" onClick={() => void savePreferences()}>{preferencesSaving ? '正在保存…' : '保存通知偏好'}</button>
+		</fieldset> : null}
+	</section> : null}
 
     <div className="notifications-page__filters" role="group" aria-label="通知筛选">
       <button type="button" aria-pressed={filter === 'all'} disabled={Boolean(activeAction)} onClick={() => switchFilter('all')}>全部通知</button>
